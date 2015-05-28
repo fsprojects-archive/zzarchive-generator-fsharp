@@ -28,11 +28,11 @@ let releaseNotesData =
     |> parseAllReleaseNotes
 
 let release = List.head releaseNotesData
+let msg = release.Notes |> List.fold (fun r s -> r + s + "\n") ""
 
 Target "ReleaseGenerator" (fun _ ->
     StageAll ""
-    Git.CommitMessage.setMessage "" (release.Notes |> List.fold (fun r s -> r + s + "\n") "")
-    Git.Commit.Commit "" (sprintf "Bump version to %s" release.NugetVersion)
+    Git.Commit.Commit "" ((sprintf "Release %s\n" release.NugetVersion) + msg )
     Branches.push ""
 )
 
@@ -52,8 +52,8 @@ Target "ReleaseTemplates" (fun _ ->
     CopyRecursive "templates" tempReleaseDir true |> tracefn "%A"
 
     StageAll tempReleaseDir
-    Git.CommitMessage.setMessage tempReleaseDir (release.Notes |> List.fold (fun r s -> r + s + "\n") "")
-    Git.Commit.Commit tempReleaseDir (sprintf "Release %s" release.NugetVersion)
+
+    Git.Commit.Commit tempReleaseDir ((sprintf "Release %s\n" release.NugetVersion) + msg )
     Branches.pushBranch tempReleaseDir "origin" "templates"
 )
 
