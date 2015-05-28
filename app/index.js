@@ -7,7 +7,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
 
   constructor: function() {
     yeoman.generators.Base.apply(this, arguments);
-  },
+  }, 
 
 
   init: function() {
