@@ -1,4 +1,4 @@
 node_modules/
-templates/
+temp/
 .paket/paket.exe
 packages

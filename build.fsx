@@ -20,7 +20,8 @@ let gitHome = "https://github.com/" + gitOwner
 // The name of the project on GitHub
 let gitName = "generator-fsharp"
 
-let tempReleaseDir = "temp/release"
+let tempGeneratorDir = "temp/generator"
+let tempTemplatesDir = "temp/templates"
 
 // Read additional information from the release notes document
 let releaseNotesData =
@@ -28,33 +29,47 @@ let releaseNotesData =
     |> parseAllReleaseNotes
 
 let release = List.head releaseNotesData
+let msg = release.Notes |> List.fold (fun r s -> r + s + "\n") ""
 
-Target "ReleaseGenerator" (fun _ ->
+let cleanEverythingFromLastCheckout dir =
+    let tempGitDir = Path.GetTempPath() </> "gitrelease"
+    CleanDir tempGitDir
+    CopyRecursive (dir </> ".git") tempGitDir true |> ignore
+    CleanDir dir
+    CopyRecursive tempGitDir (dir  </> ".git") true |> ignore
+
+Target "PushDevelop" (fun _ ->
     StageAll ""
-    Git.CommitMessage.setMessage "" (release.Notes |> List.fold (fun r s -> r + s + "\n") "")
-    Git.Commit.Commit "" (sprintf "Bump version to %s" release.NugetVersion)
-    Branches.push ""
+    Git.Commit.Commit "" ((sprintf "Release %s\n" release.NugetVersion) + msg )
+    Branches.pushBranch "" "origin" "develop"
 )
 
+Target "ReleaseGenerator" (fun _ ->
+    CleanDir tempGeneratorDir
+    Repository.cloneSingleBranch "" (gitHome + "/" + gitName + ".git") "master" tempGeneratorDir
+    cleanEverythingFromLastCheckout tempGeneratorDir
+    CreateDir (tempGeneratorDir </> "app")
+    CopyRecursive "app" (tempGeneratorDir </> "app")  true |> tracefn "%A"
+    CopyFile tempGeneratorDir "LICENSE"
+    CopyFile tempGeneratorDir "package.json"
+    CopyFile tempGeneratorDir "README.md"
+    CopyFile tempGeneratorDir ".gitignore"
+     //TODO
+    StageAll tempGeneratorDir
+    Git.Commit.Commit tempGeneratorDir ((sprintf "Release %s\n" release.NugetVersion) + msg )
+    Branches.pushBranch tempGeneratorDir "origin" "master"
+    CleanDir tempGeneratorDir
+)
 
 Target "ReleaseTemplates" (fun _ ->
-    CleanDir tempReleaseDir
-    Repository.cloneSingleBranch "" (gitHome + "/" + gitName + ".git") "templates" tempReleaseDir
-
-    let cleanEverythingFromLastCheckout() =
-        let tempGitDir = Path.GetTempPath() </> "gitrelease"
-        CleanDir tempGitDir
-        CopyRecursive (tempReleaseDir </> ".git") tempGitDir true |> ignore
-        CleanDir tempReleaseDir
-        CopyRecursive tempGitDir (tempReleaseDir  </> ".git") true |> ignore
-
-    cleanEverythingFromLastCheckout()
-    CopyRecursive "templates" tempReleaseDir true |> tracefn "%A"
-
-    StageAll tempReleaseDir
-    Git.CommitMessage.setMessage tempReleaseDir (release.Notes |> List.fold (fun r s -> r + s + "\n") "")
-    Git.Commit.Commit tempReleaseDir (sprintf "Release %s" release.NugetVersion)
-    Branches.pushBranch tempReleaseDir "origin" "templates"
+    CleanDir tempTemplatesDir
+    Repository.cloneSingleBranch "" (gitHome + "/" + gitName + ".git") "templates" tempTemplatesDir
+    cleanEverythingFromLastCheckout tempTemplatesDir
+    CopyRecursive "templates" tempTemplatesDir true |> tracefn "%A"
+    StageAll tempTemplatesDir
+    Git.Commit.Commit tempTemplatesDir ((sprintf "Release %s\n" release.NugetVersion) + msg )
+    Branches.pushBranch tempTemplatesDir "origin" "templates"
+    CleanDir tempTemplatesDir
 )
 
 // --------------------------------------------------------------------------------------
@@ -62,5 +77,14 @@ Target "ReleaseTemplates" (fun _ ->
 // --------------------------------------------------------------------------------------
 
 Target "Default" DoNothing
+Target "Release" DoNothing
+
+"PushDevelop"
+ ==> "ReleaseTemplates"
+ ==> "Release"
+
+"PushDevelop"
+ ==> "ReleaseGenerator"
+ ==> "Release"
 
 RunTargetOrDefault "Default"
