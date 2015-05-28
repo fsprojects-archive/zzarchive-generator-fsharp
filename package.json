@@ -1,0 +1,31 @@
+{
+  "name": "fsharp",
+  "version": "0.0.0",
+  "description": "Yeoman generator",
+  "license": "MIT",
+  "main": "app/index.js",
+  "repository": "Krzysztof-Cieslak/generator-generator-fsharp",
+  "author": {
+    "name": "Krzysztof Cieślak",
+    "email": "krzysztof_cieslak@windowslive.com",
+    "url": "https://github.com/Krzysztof-Cieslak"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "files": [
+    "generators"
+  ],
+  "keywords": [
+    "yeoman-generator"
+  ],
+  "dependencies": {
+      "chai": "^1.10.0",
+      "chalk": "^1.0.0",
+      "uuid": "^2.0.1",
+      "yeoman-generator": "^0.19.0",
+      "yosay": "^1.0.0"
+  },
+  "devDependencies": {
+  }
+}
