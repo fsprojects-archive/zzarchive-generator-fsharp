@@ -4,6 +4,8 @@ var yosay = require('yosay');
 var chalk = require('chalk');
 var path = require('path');
 var fs = require('fs');
+var uuid = require('uuid');
+
 var FSharpGenerator = yeoman.generators.Base.extend({
 
     username: 'Krzysztof-Cieslak',
@@ -45,80 +47,47 @@ var FSharpGenerator = yeoman.generators.Base.extend({
 
     askForName: function() {
         var done = this.async();
-        var app = '';
-        switch (this.type) {
-            case 'empty':
-                app = 'EmptyApplication';
-                break;
-            case 'console':
-                app = 'ConsoleApplication';
-                break;
-            case 'classlib':
-                app = 'ClassLibrary';
-                break;
-            case 'unittest':
-                app = 'UnitTest';
-                break;
-        }
         var prompts = [{
             name: 'applicationName',
-            message: 'What\'s the name of your ASP.NET application?',
-            default: app
+            message: 'What\'s the name of your application?',
+            default: this.type
         }];
         this.prompt(prompts, function(props) {
             this.templatedata.namespace = props.applicationName;
             this.templatedata.applicationname = props.applicationName;
+            this.templatedata.guid = uuid.v4();
             this.applicationName = props.applicationName;
             done();
         }.bind(this));
     },
 
+    _copy: function(dirPath, targetDirPath){
+
+        var files = fs.readdirSync(dirPath);
+        for(var i in files)
+        {
+            var f = files[i];
+            var fp = path.join(dirPath, f);
+
+            if(fs.statSync(fp).isDirectory()) {
+                 var newTargetPath = path.join(targetDirPath, f);
+                 this._copy(fp, newTargetPath);
+            }
+            else {
+                var fn = path.join(targetDirPath, f.replace("ApplicationName", this.applicationName));
+                this.template(fp,fn, this.templatedata);
+            }
+        }
+    },
+
     writing: function() {
-        var p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, this.type)
-        this.sourceRoot(p);
-        var log = this.log
-        var appName = this.applicationName;
-        var t = function self(dirPath, targetDirPath){
-            var files = fs.readdirSync(p);
-            files.forEach(function(f){
-                var fp = path.join(dirPath, f);
-
-                if(fs.statSync(fp).isDirectory()) {
-                     var newTargetPath = path.join(targetDirPath, f);
-                     self(fp, newTargetPath);
-                }
-                else {
-                    var fn = f.replace("ApplicationName", appName);
-
-                    log("FILE: " + fn);
-                }
-
-            })
-        };
-        t(p);
-
-
-        // switch (this.type) {
-        //     case 'console':
-        //         this.copy(this.sourceRoot() + '/App.config', this.applicationName + '/App.config');
-        //         this.template(this.sourceRoot() + '/Program.fs', this.applicationName + '/Program.fs', this.templatedata);
-        //         this.template(this.sourceRoot() + '/ConsoleApplication1.fsproj', this.applicationName + '/' + this.applicationName + '.fsproj', this.templatedata);
-        //         break;
-        //
-        //     case 'classlib':
-        //         this.template(this.sourceRoot() + '/Script.fsx', this.applicationName + '/Script.fsx', this.templatedata);
-        //         this.template(this.sourceRoot() + '/Library1.fs', this.applicationName + '/' + this.applicationName + '.fs', this.templatedata);
-        //         this.template(this.sourceRoot() + '/Library1.fsproj', this.applicationName + '/' + this.applicationName + '.fsproj', this.templatedata);
-        //         break;
-        //     default:
-        //         this.log('Unknown project type');
-        // }
+        var p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, this.type);
+        this._copy(p, this.applicationName);
     },
 
     end: function() {
         this.log('\r\n');
-        this.log('Your project is now created, you can use the following commands to get going');
-        this.log(chalk.green('    paket install'));
+        this.log('Your project is now created');
         this.log('\r\n');
     }
 });
