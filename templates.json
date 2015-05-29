@@ -1,0 +1,6 @@
+{
+    "Templates": [
+        { "name": "Console Application", "value": "console" },
+        { "name": "Class Library", "value": "classlib" }
+    ]
+}
