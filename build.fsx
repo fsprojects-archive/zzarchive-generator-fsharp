@@ -48,10 +48,12 @@ Target "ReleaseGenerator" (fun _ ->
     CleanDir tempGeneratorDir
     Repository.cloneSingleBranch "" (gitHome + "/" + gitName + ".git") "master" tempGeneratorDir
     cleanEverythingFromLastCheckout tempGeneratorDir
+    CreateDir (tempGeneratorDir </> "app")
     CopyRecursive "app" (tempGeneratorDir </> "app")  true |> tracefn "%A"
     CopyFile tempGeneratorDir "LICENSE"
     CopyFile tempGeneratorDir "package.json"
     CopyFile tempGeneratorDir "README.md"
+    CopyFile tempGeneratorDir ".gitignore"
      //TODO
     StageAll tempGeneratorDir
     Git.Commit.Commit tempGeneratorDir ((sprintf "Release %s\n" release.NugetVersion) + msg )
@@ -75,5 +77,14 @@ Target "ReleaseTemplates" (fun _ ->
 // --------------------------------------------------------------------------------------
 
 Target "Default" DoNothing
+Target "Release" DoNothing
+
+"PushDevelop"
+ ==> "ReleaseTemplates"
+ ==> "Release"
+
+"PushDevelop"
+ ==> "ReleaseGenerator"
+ ==> "Release"
 
 RunTargetOrDefault "Default"
