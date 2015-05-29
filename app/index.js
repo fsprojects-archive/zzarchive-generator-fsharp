@@ -3,6 +3,7 @@ var yeoman = require('yeoman-generator');
 var yosay = require('yosay');
 var chalk = require('chalk');
 var path = require('path');
+var fs = require('fs');
 var FSharpGenerator = yeoman.generators.Base.extend({
 
     username: 'Krzysztof-Cieslak',
@@ -21,13 +22,13 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         this.templatedata = {};
         this.remote(this.username, this.repo, this.branch, function (err,r) {
             done();
-        })
+        }, true)
     },
 
     askFor: function() {
         var done = this.async();
         var p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, 'templates.json')
-        var choices = require(p)
+        var choices = JSON.parse(fs.readFileSync(p, "utf8"));
         this.log(choices);
         var prompts = [{
             type: 'list',
