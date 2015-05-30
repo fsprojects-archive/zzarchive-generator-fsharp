@@ -66,6 +66,8 @@ Target "ReleaseTemplates" (fun _ ->
     Repository.cloneSingleBranch "" (gitHome + "/" + gitName + ".git") "templates" tempTemplatesDir
     cleanEverythingFromLastCheckout tempTemplatesDir
     CopyRecursive "templates" tempTemplatesDir true |> tracefn "%A"
+    CopyFile tempTemplatesDir "README.md"
+    CopyFile tempGeneratorDir "LICENSE"
     StageAll tempTemplatesDir
     Git.Commit.Commit tempTemplatesDir ((sprintf "Release %s\n" release.NugetVersion) + msg )
     Branches.pushBranch tempTemplatesDir "origin" "templates"
