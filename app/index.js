@@ -6,6 +6,17 @@ var path = require('path');
 var fs = require('fs');
 var uuid = require('uuid');
 
+var greeting =
+    "\n  ____    ____    __" +
+    "\n /\\  _`\\ /\\  _`\\ /\\ \\ " +
+    "\n \\ \\ \\L\\_\\ \\,\\L\\_\\ \\ \\___      __     _ __   _____ " +
+    "\n  \\ \\  _\\/\\/_\\__ \\\\ \\  _ `\\  /'__`\\  /\\`'__\\/\\ '__`\\ " +
+    "\n   \\ \\ \\/   /\\ \\L\\ \\ \\ \\ \\ \\/\\ \\L\\.\\_\\ \\ \\/ \\ \\ \\L\\ \\ " +
+    "\n    \\ \\_\\   \\ `\\____\\ \\_\\ \\_\\ \\__/.\\_\\\\ \\_\\  \\ \\ ,__/ " +
+    "\n     \\/_/    \\/_____/\\/_/\\/_/\\/__/\\/_/ \\/_/   \\ \\ \\/ " +
+    "\n                                               \\ \\_\\ " +
+    "\n                                                \\/_/ ";
+
 var FSharpGenerator = yeoman.generators.Base.extend({
 
     username: 'Krzysztof-Cieslak',
@@ -16,11 +27,10 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         yeoman.generators.Base.apply(this, arguments);
     },
 
-
     init: function() {
         var done = this.async();
-
-        this.log(yosay('Welcome to the F# generator!'));
+        this.log(greeting);
+        this.log('Welcome to the perfect ' + chalk.red('FSharp') + ' generator!');
         this.templatedata = {};
         this.remote(this.username, this.repo, this.branch, function (err,r) {
             done();
