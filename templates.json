@@ -1,6 +1,7 @@
 {
     "Templates": [
         { "name": "Console Application", "value": "console" },
-        { "name": "Class Library", "value": "classlib" }
+        { "name": "Class Library", "value": "classlib" },
+        { "name": "ASP.NET Web Api", "value": "aspnetwebapi" }
     ]
 }
