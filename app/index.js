@@ -74,7 +74,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
                  this._copy(fp, newTargetPath);
             }
             else {
-                var fn = path.join(targetDirPath, f.replace("ApplicationName", this.applicationName));
+                var fn = path.join(targetDirPath.replace("ApplicationName", this.applicationName), f.replace("ApplicationName", this.applicationName));
                 this.template(fp,fn, this.templatedata);
             }
         }
