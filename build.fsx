@@ -31,6 +31,8 @@ let releaseNotesData =
 let release = List.head releaseNotesData
 let msg = release.Notes |> List.fold (fun r s -> r + s + "\n") ""
 
+let npm = @"C:\Program Files\nodejs\npm"
+
 let cleanEverythingFromLastCheckout dir =
     let tempGitDir = Path.GetTempPath() </> "gitrelease"
     CleanDir tempGitDir
@@ -58,7 +60,6 @@ Target "ReleaseGenerator" (fun _ ->
     StageAll tempGeneratorDir
     Git.Commit.Commit tempGeneratorDir ((sprintf "Release %s\n" release.NugetVersion) + msg )
     Branches.pushBranch tempGeneratorDir "origin" "master"
-    CleanDir tempGeneratorDir
 )
 
 Target "ReleaseTemplates" (fun _ ->
@@ -71,7 +72,16 @@ Target "ReleaseTemplates" (fun _ ->
     StageAll tempTemplatesDir
     Git.Commit.Commit tempTemplatesDir ((sprintf "Release %s\n" release.NugetVersion) + msg )
     Branches.pushBranch tempTemplatesDir "origin" "templates"
-    CleanDir tempTemplatesDir
+)
+
+Target "Release" (fun _ ->
+    let args = sprintf "publish \".\" --tag %s" release.NugetVersion
+    let result =
+        ExecProcess (fun info ->
+            info.FileName <- npm
+            info.WorkingDirectory <- tempGeneratorDir
+            info.Arguments <- args) System.TimeSpan.MaxValue
+    if result <> 0 then failwithf "Error during running npm with %s" args
 )
 
 // --------------------------------------------------------------------------------------
@@ -79,7 +89,6 @@ Target "ReleaseTemplates" (fun _ ->
 // --------------------------------------------------------------------------------------
 
 Target "Default" DoNothing
-Target "Release" DoNothing
 
 "PushDevelop"
  ==> "ReleaseTemplates"
