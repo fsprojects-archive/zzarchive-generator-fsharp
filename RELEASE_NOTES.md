@@ -1,3 +1,6 @@
+#### 0.1.8 - 08.06.2015
+* Add Paket support
+
 #### 0.1.7 - 08.06.2015
 * Update `build.fsx`
 

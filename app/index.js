@@ -5,6 +5,7 @@ var chalk = require('chalk');
 var path = require('path');
 var fs = require('fs');
 var uuid = require('uuid');
+var spawn = require('child_process').spawn;
 
 var greeting =
     "\n  ____    ____    __" +
@@ -19,7 +20,7 @@ var greeting =
 
 var FSharpGenerator = yeoman.generators.Base.extend({
 
-    username: 'Krzysztof-Cieslak',
+    username: 'fsprojects',
     repo: 'generator-fsharp',
     branch: 'templates',
 
@@ -71,6 +72,21 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         }.bind(this));
     },
 
+    askForPaket: function() {
+        var done = this.async();
+        var prompts = [{
+            type: 'list',
+            name: 'paket',
+            message: 'Do You want to use Paket?',
+            choices: [{"name": "Yes", "value": true}, {"name": "No", "value": false}]
+        }];
+        this.prompt(prompts, function(props) {
+            this.paket = props.paket;
+            done();
+        }.bind(this));
+
+    },
+
     _copy: function(dirPath, targetDirPath){
 
         var files = fs.readdirSync(dirPath);
@@ -78,7 +94,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         {
             var f = files[i];
             var fp = path.join(dirPath, f);
-
+            this.log(f);
             if(fs.statSync(fp).isDirectory()) {
                  var newTargetPath = path.join(targetDirPath, f);
                  this._copy(fp, newTargetPath);
@@ -91,9 +107,42 @@ var FSharpGenerator = yeoman.generators.Base.extend({
     },
 
     writing: function() {
+        var log = this.log;
         var p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, this.type);
         this._copy(p, this.applicationName);
+        if(this.paket) {
+            var bpath = path.join(".paket", "paket.bootstrapper.exe" );
+            var p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, bpath);
+            this.copy(p, bpath);
+        }
     },
+
+    install: function() {
+        var log = this.log
+        var done = this.async();
+        if(this.paket) {
+            var bpath = path.join(".paket", "paket.bootstrapper.exe" );
+            var bootstrapper = spawn(bpath);
+            bootstrapper.stdout.on('data', function (data) {
+                log(data.toString());
+            });
+
+            bootstrapper.on('close', function (code) {
+                var ppath = path.join(".paket", "paket.exe" );
+                var paket = spawn(ppath,['convert-from-nuget','-f']);
+                paket.stdout.on('data', function (data) {
+                    log(data.toString());
+                });
+                paket.stdout.on('close', function (data) {
+                    done();
+                });
+            });
+        }
+        else {
+            done();
+        }
+    },
+
 
     end: function() {
         this.log('\r\n');
