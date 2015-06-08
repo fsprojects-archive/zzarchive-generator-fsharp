@@ -1,3 +1,6 @@
+#### 0.2.0 - 08.06.2015
+* Multiple project types added ( WPF, WebAPI, FsLab, Suave)
+
 #### 0.1.8 - 08.06.2015
 * Add Paket support
 

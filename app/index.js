@@ -42,7 +42,6 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         var done = this.async();
         var p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, 'templates.json')
         var choices = JSON.parse(fs.readFileSync(p, "utf8"));
-        this.log(choices);
         var prompts = [{
             type: 'list',
             name: 'type',
