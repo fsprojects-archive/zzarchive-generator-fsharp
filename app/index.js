@@ -42,7 +42,6 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         var done = this.async();
         var p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, 'templates.json')
         var choices = JSON.parse(fs.readFileSync(p, "utf8"));
-        this.log(choices);
         var prompts = [{
             type: 'list',
             name: 'type',
@@ -94,7 +93,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         {
             var f = files[i];
             var fp = path.join(dirPath, f);
-
+            this.log(f);
             if(fs.statSync(fp).isDirectory()) {
                  var newTargetPath = path.join(targetDirPath, f);
                  this._copy(fp, newTargetPath);
