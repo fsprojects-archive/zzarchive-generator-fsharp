@@ -1,6 +1,11 @@
 {
     "Templates": [
         { "name": "Console Application", "value": "console" },
-        { "name": "Class Library", "value": "classlib" }
+        { "name": "Class Library", "value": "classlib" },
+        { "name": "Windows (WPF) Application", "value": "windows" },
+        { "name": "ASP.Net Web API 2 Application", "value": "aspwebapi2" },
+        { "name": "Suave Application", "value": "suave" },
+        { "name": "FsLab Basic", "value": "fslabbasic" },
+        { "name": "FsLab Journal", "value": "fslabjournal" }
     ]
 }
