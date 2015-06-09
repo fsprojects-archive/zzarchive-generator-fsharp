@@ -35,7 +35,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         this.templatedata = {};
         this.remote(this.username, this.repo, this.branch, function (err,r) {
             done();
-        }, false)
+        }, true)
     },
 
     askFor: function() {
@@ -121,7 +121,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
                  this._copy(fp, newTargetPath);
             }
             else {
-                var fn = path.join(targetDirPath.replace("ApplicationName", this.applicationName), f.replace("ApplicationName", this.applicationName));
+                var fn = path.join(targetDirPath.replace('ApplicationName', this.applicationName), f.replace('ApplicationName', this.applicationName));
                 this.template(fp,fn, this.templatedata);
             }
         }
@@ -156,6 +156,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         var appName = this.applicationName;
         var action = this.action;
         var dest = this.destinationRoot();
+        var isWin = /^win/.test(process.platform);
         if(this.paket) {
             var bpath;
             if(this.action !== 2) {
@@ -164,7 +165,13 @@ var FSharpGenerator = yeoman.generators.Base.extend({
             else {
                 bpath = path.join(".paket", "paket.bootstrapper.exe" );
             }
-            var bootstrapper = spawn(bpath);
+            var bootstrapper;
+            if(isWin){
+                bootstrapper = spawn(bpath);
+            }
+            else {
+                bootstrapper = spawn("mono", [bpath])
+            }
             bootstrapper.stdout.on('data', function (data) {
                 log(data.toString());
             });
@@ -183,7 +190,13 @@ var FSharpGenerator = yeoman.generators.Base.extend({
                 try{
 
                 log(cpath);
-                var paket = spawn(ppath, ['convert-from-nuget','-f'], {cwd: cpath});
+                var paket;
+                if(isWin){
+                    paket = spawn(ppath, ['convert-from-nuget','-f'], {cwd: cpath});
+                }
+                else {
+                    paket = spawn('mono', [ppath, 'convert-from-nuget','-f'], {cwd: cpath});
+                }
                 paket.stdout.on('data', function (data) {
                     log(data.toString());
                 });
