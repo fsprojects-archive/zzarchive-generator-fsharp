@@ -35,24 +35,46 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         this.templatedata = {};
         this.remote(this.username, this.repo, this.branch, function (err,r) {
             done();
-        }, true)
+        }, false)
     },
 
     askFor: function() {
         var done = this.async();
-        var p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, 'templates.json')
-        var choices = JSON.parse(fs.readFileSync(p, "utf8"));
         var prompts = [{
             type: 'list',
-            name: 'type',
-            message: 'What type of application do you want to create?',
-            choices: choices.Templates
+            name: 'action',
+            message: 'What do You want to do?',
+            choices: [{"name": "Create standalone project", "value": 1},
+                      {"name": "Add new project to solution", "value": 2},
+                      {"name": "Create empty solution", "value": 3}
+                      ]
         }];
-
         this.prompt(prompts, function(props) {
-            this.type = props.type;
+            this.action = props.action;
             done();
         }.bind(this));
+    },
+
+    askForProject: function() {
+        var done = this.async();
+        if(this.action !== 3) {
+            var p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, 'templates.json')
+            var choices = JSON.parse(fs.readFileSync(p, "utf8"));
+            var prompts = [{
+                type: 'list',
+                name: 'type',
+                message: 'What type of application do you want to create?',
+                choices: choices.Templates
+            }];
+
+            this.prompt(prompts, function(props) {
+                this.type = props.type;
+                done();
+            }.bind(this));
+        }
+        else {
+            done();
+        }
     },
 
     askForName: function() {
@@ -107,11 +129,23 @@ var FSharpGenerator = yeoman.generators.Base.extend({
 
     writing: function() {
         var log = this.log;
-        var p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, this.type);
+        var p;
+        if (this.action === 3){
+            p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, 'sln')
+        }
+        else {
+            p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, this.type);
+        }
         this._copy(p, this.applicationName);
         if(this.paket) {
-            var bpath = path.join(".paket", "paket.bootstrapper.exe" );
-            var p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, bpath);
+            var bpath;
+            if(this.action !== 2) {
+                bpath = path.join(this.applicationName, ".paket", "paket.bootstrapper.exe" );
+            }
+            else {
+                bpath = path.join(".paket", "paket.bootstrapper.exe" );
+            }
+            var p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, ".paket", "paket.bootstrapper.exe");
             this.copy(p, bpath);
         }
     },
@@ -119,22 +153,49 @@ var FSharpGenerator = yeoman.generators.Base.extend({
     install: function() {
         var log = this.log
         var done = this.async();
+        var appName = this.applicationName;
+        var action = this.action;
+        var dest = this.destinationRoot();
         if(this.paket) {
-            var bpath = path.join(".paket", "paket.bootstrapper.exe" );
+            var bpath;
+            if(this.action !== 2) {
+                bpath = path.join(this.applicationName, ".paket", "paket.bootstrapper.exe" );
+            }
+            else {
+                bpath = path.join(".paket", "paket.bootstrapper.exe" );
+            }
             var bootstrapper = spawn(bpath);
             bootstrapper.stdout.on('data', function (data) {
                 log(data.toString());
             });
 
             bootstrapper.on('close', function (code) {
-                var ppath = path.join(".paket", "paket.exe" );
-                var paket = spawn(ppath,['convert-from-nuget','-f']);
+                var ppath;
+                var cpath;
+                if(action !== 2) {
+                    ppath = path.join(dest, appName, ".paket", "paket.exe" );
+                    cpath = path.join(dest, appName);
+                }
+                else {
+                    ppath = path.join(dest, ".paket", "paket.exe" );
+                    cpath = dest;
+                }
+                try{
+
+                log(cpath);
+                var paket = spawn(ppath, ['convert-from-nuget','-f'], {cwd: cpath});
                 paket.stdout.on('data', function (data) {
                     log(data.toString());
                 });
                 paket.stdout.on('close', function (data) {
                     done();
                 });
+                }
+                catch(ex)
+                {
+                    log(ex);
+                }
+
             });
         }
         else {
