@@ -88,6 +88,14 @@ var FSharpGenerator = yeoman.generators.Base.extend({
             this.templatedata.namespace = props.applicationName;
             this.templatedata.applicationname = props.applicationName;
             this.templatedata.guid = uuid.v4();
+            if(this.action === 2) {
+                this.templatedata.packagesPath = "../packages"
+                this.templatedata.paketPath = "../.paket"
+            }
+            else {
+                this.templatedata.packagesPath = "packages"
+                this.templatedata.paketPath = ".paket"
+            }
             this.applicationName = props.applicationName;
             done();
         }.bind(this));

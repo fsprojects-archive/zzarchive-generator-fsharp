@@ -46,7 +46,7 @@ Target "PushDevelop" (fun _ ->
     Branches.pushBranch "" "origin" "develop"
 )
 
-Target "ReleaseGenerator" (fun _ ->
+Target "PushGenerator" (fun _ ->
     CleanDir tempGeneratorDir
     Repository.cloneSingleBranch "" (gitHome + "/" + gitName + ".git") "master" tempGeneratorDir
     cleanEverythingFromLastCheckout tempGeneratorDir
@@ -102,10 +102,9 @@ Target "Default" DoNothing
 
 "PushDevelop"
  ==> "ReleaseTemplates"
- ==> "Release"
 
 "PushDevelop"
- ==> "ReleaseGenerator"
+ ==> "PushGenerator"
  ==> "Version"
  ==> "Release"
 

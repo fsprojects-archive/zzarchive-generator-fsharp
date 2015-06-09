@@ -3,12 +3,12 @@
 // Reference FsLab together with FAKE for building & Suave for hosting Journals
 // --------------------------------------------------------------------------------------
 
-#I "../packages/FAKE/tools"
-#I "../packages/Suave/lib/net40"
-#I "../packages/FsLab.Runner/lib/net40"
+#I "<%= packagesPath %>/FAKE/tools"
+#I "<%= packagesPath %>/Suave/lib/net40"
+#I "<%= packagesPath %>/FsLab.Runner/lib/net40"
 
-#load "../packages/FsLab/FsLab.fsx"
-#load "../packages/FSharp.Formatting/FSharp.Formatting.fsx"
+#load "<%= packagesPath %>/FsLab/FsLab.fsx"
+#load "<%= packagesPath %>/FSharp.Formatting/FSharp.Formatting.fsx"
 #r "FSharp.Literate.dll"
 #r "FsLab.Runner.dll"
 #r "FakeLib.dll"
@@ -33,7 +33,7 @@ let ctx = ProcessingContext.Create(__SOURCE_DIRECTORY__).With(fun p ->
   { p with
       OutputKind = OutputKind.Html
       Output = __SOURCE_DIRECTORY__ @@ "output";
-      TemplateLocation = Some(__SOURCE_DIRECTORY__ @@ "../packages/FsLab.Runner")
+      TemplateLocation = Some(__SOURCE_DIRECTORY__ @@ "<%= packagesPath %>/FsLab.Runner")
       FailedHandler = handleError })
 
 // --------------------------------------------------------------------------------------

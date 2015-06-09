@@ -7,7 +7,7 @@
 // Once you have packages, use Alt+Enter (in VS) or Ctrl+Enter to
 // run the following in F# Interactive. You can ignore the project
 // (running it doesn't do anything, it just contains this script)
-#load "../packages/FsLab/FsLab.fsx"
+#load "<%= packagesPath %>/FsLab/FsLab.fsx"
 
 open Deedle
 open FSharp.Data

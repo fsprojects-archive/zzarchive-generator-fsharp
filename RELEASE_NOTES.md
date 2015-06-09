@@ -1,3 +1,9 @@
+#### 0.3.1 - 09.06.2015
+* Adding `sln` files
+* Choosing between standalone and "part of solution" project
+* Fix Paket spawn on mono
+* Support for packagePath and paketPath in templates
+
 #### 0.2.2 - 09.06.2015
 * Multiple project types added ( WPF, WebAPI, FsLab, Suave)
 
