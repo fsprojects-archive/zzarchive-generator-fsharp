@@ -1,5 +1,5 @@
 (*** hide ***)
-#load "packages/FsLab/FsLab.fsx"
+#load "<%= packagesPath %>/FsLab/FsLab.fsx"
 (**
 
 Welcome to FsLab journal
