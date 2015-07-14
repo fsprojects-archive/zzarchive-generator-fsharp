@@ -6,6 +6,7 @@ var path = require('path');
 var fs = require('fs');
 var uuid = require('uuid');
 var spawn = require('child_process').spawn;
+var request = require('request');
 
 var greeting =
     "\n  ____    ____    __" +
@@ -28,14 +29,64 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         yeoman.generators.Base.apply(this, arguments);
     },
 
+    _download : function(t, done, reload) {
+        t.remote(t.username, t.repo, t.branch, function (err,r) {
+            done();
+        }, reload)
+    },
+
+    _saveSHA : function (p, sha, old) {
+        if(old){
+            fs.unlinkSync(path);
+        }
+        fs.appendFileSync(p, sha);
+    },
+
+    _checkSHA : function (t, p, sha, old, done) {
+        var oldsha = "";
+        if(old) oldsha = fs.readFileSync(p, 'utf8');
+        if(old && sha != oldsha) {
+            t._saveSHA(p, sha, true);
+            t._download(t, done, true)
+        }
+        else if (old && sha == oldsha) {
+            done();
+        }
+        else {
+            t._saveSHA(p, sha, false);
+            t._download(t, done, true);
+        }
+    },
+
+    _getSHA : function(old, p, done) {
+        var log = this.log;
+        var t = this;
+        var checkSHA = this._checkSHA;
+        var options = {
+            url: "https://api.github.com/repos/fsprojects/generator-fsharp/commits?sha=templates",
+            headers: {
+                'User-Agent': 'request'
+            }
+        };
+        request(options, function (error, response, body) {
+            if (!error && response.statusCode == 200) {
+                var sha = JSON.parse(body)[0].sha;
+                checkSHA(t, p, sha, old, done);
+            }
+        });
+    },
+
+
+
+
     init: function() {
-        var done = this.async();
         this.log(greeting);
         this.log('Welcome to the perfect ' + chalk.red('FSharp') + ' generator!');
         this.templatedata = {};
-        this.remote(this.username, this.repo, this.branch, function (err,r) {
-            done();
-        }, true)
+        var done = this.async();
+        var p = path.join(this.cacheRoot(), "sha")
+        var old = fs.existsSync(p);
+        this._getSHA(old, p, done);
     },
 
     askFor: function() {
