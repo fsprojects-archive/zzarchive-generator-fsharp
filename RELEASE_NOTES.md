@@ -1,3 +1,6 @@
+#### 0.4.0 - 14.07.2015
+* Download templates only if there was new commit to templates branch.
+
 #### 0.3.1 - 09.06.2015
 * Adding `sln` files
 * Choosing between standalone and "part of solution" project
