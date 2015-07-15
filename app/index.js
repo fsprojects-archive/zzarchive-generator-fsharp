@@ -37,7 +37,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
 
     _saveSHA : function (p, sha, old) {
         if(old){
-            fs.unlinkSync(path);
+            fs.unlinkSync(p);
         }
         fs.appendFileSync(p, sha);
     },
