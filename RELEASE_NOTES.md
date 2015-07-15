@@ -1,3 +1,6 @@
+#### 0.4.1 - 16.07.2015
+* Fix saving SHA file if old existed.
+
 #### 0.4.0 - 14.07.2015
 * Download templates only if there was new commit to templates branch.
 
