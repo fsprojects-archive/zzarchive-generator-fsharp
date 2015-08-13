@@ -1,4 +1,4 @@
-#### 0.4.2 - 13.08.2015
+#### 0.4.3 - 13.08.2015
 * Create cache directory if it doesn't exist.
 
 #### 0.4.1 - 16.07.2015
