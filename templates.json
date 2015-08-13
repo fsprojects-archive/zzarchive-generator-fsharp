@@ -6,6 +6,7 @@
         { "name": "ASP.Net Web API 2 Application", "value": "aspwebapi2" },
         { "name": "Suave Application", "value": "suave" },
         { "name": "FsLab Basic", "value": "fslabbasic" },
-        { "name": "FsLab Journal", "value": "fslabjournal" }
+        { "name": "FsLab Journal", "value": "fslabjournal" },
+        { "name": "WebSharper.UI.Next SPA", "value": "websharperspa" }
     ]
 }
