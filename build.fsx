@@ -63,6 +63,9 @@ Target "PushGenerator" (fun _ ->
 )
 
 Target "ReleaseTemplates" (fun _ ->
+    StageAll ""
+    Git.Commit.Commit "" "Release new templates"
+    Branches.pushBranch "" "origin" "develop"
     CleanDir tempTemplatesDir
     Repository.cloneSingleBranch "" (gitHome + "/" + gitName + ".git") "templates" tempTemplatesDir
     cleanEverythingFromLastCheckout tempTemplatesDir
@@ -70,7 +73,7 @@ Target "ReleaseTemplates" (fun _ ->
     CopyFile tempTemplatesDir "README.md"
     CopyFile tempGeneratorDir "LICENSE"
     StageAll tempTemplatesDir
-    Git.Commit.Commit tempTemplatesDir ((sprintf "Release %s\n" release.NugetVersion) + msg )
+    Git.Commit.Commit tempTemplatesDir "Release new templates"
     Branches.pushBranch tempTemplatesDir "origin" "templates"
 )
 
@@ -99,9 +102,6 @@ Target "Release" (fun _ ->
 // --------------------------------------------------------------------------------------
 
 Target "Default" DoNothing
-
-"PushDevelop"
- ==> "ReleaseTemplates"
 
 "PushDevelop"
  ==> "PushGenerator"
