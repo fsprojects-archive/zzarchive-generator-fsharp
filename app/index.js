@@ -8,6 +8,7 @@ var uuid = require('uuid');
 var spawn = require('child_process').spawn;
 var request = require('request');
 
+var _0777 = parseInt('0777', 8);
 var greeting =
     "\n  ____    ____    __" +
     "\n /\\  _`\\ /\\  _`\\ /\\ \\ " +
@@ -18,6 +19,68 @@ var greeting =
     "\n     \\/_/    \\/_____/\\/_/\\/_/\\/__/\\/_/ \\/_/   \\ \\ \\/ " +
     "\n                                               \\ \\_\\ " +
     "\n                                                \\/_/ ";
+
+
+fs.mkdirParent = function(dirPath, mode, callback) {
+  //Call the standard fs.mkdir
+  fs.mkdir(dirPath, mode, function(error) {
+    //When it fail in this way, do the custom steps
+    if (error && error.errno === 34) {
+      //Create all the parents recursively
+      fs.mkdirParent(path.dirname(dirPath), mode, callback);
+      //And then the directory
+      fs.mkdirParent(dirPath, mode, callback);
+    }
+    //Manually run the callback since we used our own callback to do all these
+    callback && callback(error);
+  });
+};
+
+fs.mkdirParentSync = function sync (p, opts, made) {
+    if (!opts || typeof opts !== 'object') {
+        opts = { mode: opts };
+    }
+
+    var mode = opts.mode;
+    var xfs = opts.fs || fs;
+
+    if (mode === undefined) {
+        mode = _0777 & (~process.umask());
+    }
+    if (!made) made = null;
+
+    p = path.resolve(p);
+
+    try {
+        xfs.mkdirSync(p, mode);
+        made = made || p;
+    }
+    catch (err0) {
+        switch (err0.code) {
+            case 'ENOENT' :
+                made = sync(path.dirname(p), opts, made);
+                sync(p, opts, made);
+                break;
+
+            // In the case of any other error, just see if there's a dir
+            // there already.  If so, then hooray!  If not, then something
+            // is borked.
+            default:
+                var stat;
+                try {
+                    stat = xfs.statSync(p);
+                }
+                catch (err1) {
+                    throw err0;
+                }
+                if (!stat.isDirectory()) throw err0;
+                break;
+        }
+    }
+
+    return made;
+};
+
 
 var FSharpGenerator = yeoman.generators.Base.extend({
 
@@ -36,6 +99,10 @@ var FSharpGenerator = yeoman.generators.Base.extend({
     },
 
     _saveSHA : function (p, sha, old) {
+        if (!fs.existsSync(p)){
+            fs.mkdirParentSync(path.dirname(p));
+        }
+
         if(old){
             fs.unlinkSync(p);
         }
