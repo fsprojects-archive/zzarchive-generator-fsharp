@@ -42,7 +42,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Client.fs" />
-    <Compile Include="Startup.fs" />
     <Content Include="index.html" />
     <Content Include="Web.config" />
     <None Include="Setup.fsx" />
@@ -63,10 +62,6 @@
     <Reference Include="System.Web" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
-    <Reference Include="HttpMultipartParser">
-      <HintPath>..\packages\WebSharper.Owin.3.4.5.101\lib\net45\HttpMultipartParser.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="WebSharper.Collections">
       <HintPath>..\packages\WebSharper.3.4.9.188\lib\net40\WebSharper.Collections.dll</HintPath>
       <Private>True</Private>
@@ -127,34 +122,6 @@
       <HintPath>..\packages\WebSharper.3.4.9.188\lib\net40\WebSharper.Web.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Microsoft.Owin">
-      <HintPath>..\packages\Microsoft.Owin.3.0.1\lib\net45\Microsoft.Owin.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.Owin.Diagnostics">
-      <HintPath>..\packages\Microsoft.Owin.Diagnostics.3.0.1\lib\net45\Microsoft.Owin.Diagnostics.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.Owin.FileSystems">
-      <HintPath>..\packages\Microsoft.Owin.FileSystems.3.0.1\lib\net45\Microsoft.Owin.FileSystems.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.Owin.Host.HttpListener">
-      <HintPath>..\packages\Microsoft.Owin.Host.HttpListener.3.0.1\lib\net45\Microsoft.Owin.Host.HttpListener.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.Owin.Hosting">
-      <HintPath>..\packages\Microsoft.Owin.Hosting.3.0.1\lib\net45\Microsoft.Owin.Hosting.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.Owin.StaticFiles">
-      <HintPath>..\packages\Microsoft.Owin.StaticFiles.3.0.1\lib\net45\Microsoft.Owin.StaticFiles.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Owin">
-     <HintPath>..\packages\Owin.1.0\lib\net40\Owin.dll</HintPath>
-     <Private>True</Private>
-   </Reference>
   </ItemGroup>
   <!-- F# targets -->
   <Choose>
