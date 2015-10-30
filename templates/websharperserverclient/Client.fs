@@ -9,28 +9,18 @@ open WebSharper.UI.Next.Html
 [<JavaScript>]
 module Client =
 
-    let Start input k =
-        async {
-            let! data = Server.DoSomething input
-            return k data
-        }
-        |> Async.Start
-
     let Main () =
-        let input = inputAttr [attr.value ""] []
-        let output = h1 []
+        let rvInput = Var.Create ""
+        let submit = Submitter.CreateOption rvInput.View
+        let vReversed =
+            submit.View.MapAsync(function
+                | None -> async { return "" }
+                | Some input -> Server.DoSomething input
+            )
         div [
-            input
-            buttonAttr [
-                on.click (fun _ _ ->
-                    async {
-                        let! data = Server.DoSomething input.Value
-                        output.Text <- data
-                    }
-                    |> Async.Start
-                )
-            ] [text "Send"]
+            Doc.Input [] rvInput
+            Doc.Button "Send" [] submit.Trigger
             hr []
             h4Attr [attr.``class`` "text-muted"] [text "The server responded:"]
-            divAttr [attr.``class`` "jumbotron"] [output]
+            divAttr [attr.``class`` "jumbotron"] [h1 [textView vReversed]]
         ]
