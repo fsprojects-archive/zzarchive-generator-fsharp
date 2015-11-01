@@ -23,14 +23,14 @@ module Client =
 
         IndexTemplate.Main.Doc(
             ListContainer = [
-                ListModel.View People |> Doc.Convert (fun name ->
+                People.View.DocSeqCached(fun name ->
                     IndexTemplate.ListItem.Doc(Name = View.Const name)
                 )
             ],
             Name = newName,
             Add = (fun el ev ->
                 People.Add(newName.Value)
-                Var.Set newName ""
+                newName.Value <- ""
             )
         )
         |> Doc.RunById "main"

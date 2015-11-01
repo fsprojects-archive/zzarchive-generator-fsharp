@@ -26,7 +26,7 @@ module Templating =
         ]
 
     let Main ctx action title body =
-        Content.Doc(
+        Content.Page(
             MainTemplate.Doc(
                 title = title,
                 menubar = MenuBar ctx action,
