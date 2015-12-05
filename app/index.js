@@ -327,17 +327,29 @@ var FSharpGenerator = yeoman.generators.Base.extend({
                     log(data.toString());
                 });
                 paket.stdout.on('close', function (data) {
-                    done();
+                    var simplifiy;
+                    if(isWin){
+                        simplifiy = spawn(ppath, ['simplify'], {cwd: cpath});
+                    }
+                    else {
+                        simplifiy = spawn('mono', [ppath, 'simplify',], {cwd: cpath});
+                    }
+                    simplifiy.stdout.on('data', function (data) {
+                        log(data.toString());
+                    });
+                    simplifiy.stdout.on('close', function (data) {
+                        done();
+                    });
                 });
                 }
                 catch(ex)
                 {
                     log(ex);
                 }
-
             });
         }
-        else {
+        else
+        {
             done();
         }
     },
