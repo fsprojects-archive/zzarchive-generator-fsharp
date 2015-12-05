@@ -1,3 +1,6 @@
+#### 0.4.4 - 05.12.2015
+* Add paket simplify on the end of process.
+
 #### 0.4.3 - 13.08.2015
 * Create cache directory if it doesn't exist.
 
