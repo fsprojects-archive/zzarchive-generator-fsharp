@@ -243,10 +243,15 @@ var FSharpGenerator = yeoman.generators.Base.extend({
             message: 'Do You want to use FAKE?',
             choices: [{"name": "Yes", "value": true}, {"name": "No", "value": false}]
         }];
-        this.prompt(prompts, function(props) {
-            this.fake = props.fake;
-            done();
-        }.bind(this));
+
+        if (this.paket) {
+            this.prompt(prompts, function(props) {
+                this.fake = props.fake;
+                done();
+            }.bind(this));
+        }
+
+        done();
     },
 
     _copy: function(dirPath, targetDirPath){
@@ -309,14 +314,8 @@ var FSharpGenerator = yeoman.generators.Base.extend({
 
         if(this.fake) {
             if (!isWin) {
-                log('adapting file permissions');
                 var buildShPath = path.join(dest, appName, 'build.sh');
                 var chmodProc = spawnSync('chmod', ['+x', buildShPath], {cwd: dest});
-
-                log('err nr:' + chmodProc.status);
-                log('stdout:' + chmodProc.stdout);
-                log('stderr:' + chmodProc.stderr);
-                log('file permissions adapted')
             }
         }
 
