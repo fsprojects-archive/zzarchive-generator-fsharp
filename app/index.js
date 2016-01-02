@@ -8,7 +8,7 @@ var uuid = require('uuid');
 var spawn = require('child_process').spawn;
 var spawnSync = require('child_process').spawnSync;
 var request = require('request');
-var xml2js = require('xml2js');
+var libxmljs = require("libxmljs");
 var wrench = require('wrench');
 
 var _0777 = parseInt('0777', 8);
@@ -420,56 +420,77 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         var projectFiles = this._getProjectFiles();
 
         this._askForReference(projectFiles, function(selectedFile) {
-            var parser = new xml2js.Parser({preserveChildrenOrder: true});
+
             var projectFileContent = fs.read(projectFile);
 
-            parser.parseString(projectFileContent, function(err, result) {
-                log(result);
+            // log(projectFileContent);
 
-                var projectReferences;
+            var projectXml = libxmljs.parseXmlString(projectFileContent);
+            var root = projectXml.root();
 
-                for (var i in result.Project.ItemGroup)
+            var childNodes = root.childNodes();
+
+            var projectReferenceItemGroup;
+            var lastItemGroup;
+
+            for (var c in childNodes)
+            {
+                var node = childNodes[c];
+                // log(node.toString());
+
+                if (node.name() == "ItemGroup")
                 {
-                    //log(i);
-                    var itemGroup = result.Project.ItemGroup[i];
+                    lastItemGroup = node;
 
-                    log(itemGroup);
-                    if (itemGroup.ProjectReference !== undefined)
+                    // log("ItemGroup");
+                    for (var cc in node.childNodes())
                     {
-                        projectReferences = itemGroup;
-
-                        break;
+                        var itemGroupNode = node.childNodes()[cc];
+                        if (itemGroupNode.name() == "ProjectReference")
+                        {
+                            // log("ProjectReference");
+                            projectReferenceItemGroup = node;
+                            break;
+                        }
                     }
                 }
+            }
 
-                if (projectReferences === undefined) {
-                    var newItemGroup = {ProjectReference: []};
-                    result.Project.ItemGroup.push(newItemGroup);
-                    projectReferences = newItemGroup;
-                }
+            if (projectReferenceItemGroup === undefined)
+            {
+                var newItemGroup = new libxmljs.Element(projectXml, "ItemGroup");
+                projectReferenceItemGroup = lastItemGroup.addNextSibling(newItemGroup);
+            }
 
-                //log(itemGroup.ProjectReference);
-                for (var r in projectReferences.ProjectReference)
+            var alreadyReferenced = false;
+            for (var cc in projectReferenceItemGroup.childNodes())
+            {
+                var itemGroupNode = projectReferenceItemGroup.childNodes()[cc];
+                if (itemGroupNode.name() == "ProjectReference")
                 {
-                    var projectReference = itemGroup.ProjectReference[r];
-                    log(projectReference);
-                    if (projectReference.$.Include === selectedFile)
+                    // log(itemGroupNode.attr("Include").value());
+                    if (itemGroupNode.attr("Include").value() === selectedFile)
                     {
-                        log("Already referenced");
-                        break;
+                        alreadyReferenced = true;
                     }
                 }
+            }
 
-                var newEntry = { '$': { Include: selectedFile } };
-                projectReferences.ProjectReference.push(newEntry);
+            if (alreadyReferenced) {
+                log(selectedFile + " is already referenced");
+            }
+            else {
+                var projectReferenceNode = new libxmljs.Element(projectXml, "ProjectReference");
+                projectReferenceNode.attr({Include: selectedFile});
 
-                var builder = new xml2js.Builder();
-                var xml = builder.buildObject(result);
+                projectReferenceItemGroup.addChild(projectReferenceNode);
 
+                var xml = projectXml.toString();
+                log("Please press Y for updating the existing file");
                 fs.write(projectFile, xml);
+            }
 
-                done();
-            });
+            done();
         });
     },
 
