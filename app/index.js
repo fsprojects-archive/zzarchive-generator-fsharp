@@ -113,7 +113,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
     },
 
     _getTemplateDirectory : function() {
-        return path.join(this.sourceRoot(), "..","..","templates");
+        // return path.join(this.sourceRoot(), "..","..","templates");
 
         return path.join(this.cacheRoot(), this.username, this.repo, this.branch);
     },
