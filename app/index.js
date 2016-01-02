@@ -234,6 +234,20 @@ var FSharpGenerator = yeoman.generators.Base.extend({
 
     },
 
+    askForFake: function() {
+        var done = this.async();
+        var prompts = [{
+            type: 'list',
+            name: 'fake',
+            message: 'Do You want to use FAKE?',
+            choices: [{"name": "Yes", "value": true}, {"name": "No", "value": false}]
+        }];
+        this.prompt(prompts, function(props) {
+            this.fake = props.fake;
+            done();
+        }.bind(this));
+    },
+
     _copy: function(dirPath, targetDirPath){
 
         var files = fs.readdirSync(dirPath);
