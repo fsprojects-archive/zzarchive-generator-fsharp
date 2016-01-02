@@ -8,6 +8,8 @@ var uuid = require('uuid');
 var spawn = require('child_process').spawn;
 var spawnSync = require('child_process').spawnSync;
 var request = require('request');
+var xml2js = require('xml2js');
+var wrench = require('wrench');
 
 var _0777 = parseInt('0777', 8);
 var greeting =
@@ -92,6 +94,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
     ACTION_CREATE_STANDALONE_PROJECT: 1,
     ACTION_ADD_PROJECT_TO_SOLUTION: 2,
     ACTION_CREATE_EMPTY_SOLUTION: 3,
+    ACTION_ADD_REFERENCE_TO_PROJECT: 4,
 
 
 
@@ -110,7 +113,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
     },
 
     _getTemplateDirectory : function() {
-        //return path.join(this.sourceRoot(), "..","..","templates");
+        return path.join(this.sourceRoot(), "..","..","templates");
 
         return path.join(this.cacheRoot(), this.username, this.repo, this.branch);
     },
@@ -192,7 +195,8 @@ var FSharpGenerator = yeoman.generators.Base.extend({
             message: 'What do You want to do?',
             choices: [{"name": "Create standalone project", "value": this.ACTION_CREATE_STANDALONE_PROJECT},
                       {"name": "Add new project to solution", "value": this.ACTION_ADD_PROJECT_TO_SOLUTION},
-                      {"name": "Create empty solution", "value": this.ACTION_CREATE_EMPTY_SOLUTION}
+                      {"name": "Create empty solution", "value": this.ACTION_CREATE_EMPTY_SOLUTION},
+                      {"name": "Add reference to project", "value": this.ACTION_ADD_REFERENCE_TO_PROJECT}
                       ]
         }];
         this.prompt(prompts, function(props) {
@@ -202,6 +206,9 @@ var FSharpGenerator = yeoman.generators.Base.extend({
     },
 
     askForProject: function() {
+        if (this.action === this.ACTION_ADD_REFERENCE_TO_PROJECT)
+            return;
+
         var done = this.async();
         if(this.action !== this.ACTION_CREATE_EMPTY_SOLUTION) {
             var p = path.join(this._getTemplateDirectory(), 'templates.json')
@@ -224,6 +231,9 @@ var FSharpGenerator = yeoman.generators.Base.extend({
     },
 
     askForName: function() {
+        if (this.action === this.ACTION_ADD_REFERENCE_TO_PROJECT)
+            return;
+
         var done = this.async();
         var prompts = [{
             name: 'applicationName',
@@ -248,6 +258,9 @@ var FSharpGenerator = yeoman.generators.Base.extend({
     },
 
     askForPaket: function() {
+        if (this.action === this.ACTION_ADD_REFERENCE_TO_PROJECT)
+            return;
+
         var done = this.async();
         var prompts = [{
             type: 'list',
@@ -263,6 +276,9 @@ var FSharpGenerator = yeoman.generators.Base.extend({
     },
 
     askForFake: function() {
+        if (this.action === this.ACTION_ADD_REFERENCE_TO_PROJECT)
+            return;
+
         var done = this.async();
         var prompts = [{
             type: 'list',
@@ -302,6 +318,9 @@ var FSharpGenerator = yeoman.generators.Base.extend({
     },
 
     writing: function() {
+        if (this.action === this.ACTION_ADD_REFERENCE_TO_PROJECT)
+            return;
+
         var log = this.log;
         var p;
         if (this.action === this.ACTION_CREATE_EMPTY_SOLUTION){
@@ -330,6 +349,130 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         }
     },
 
+    _getProjectFile: function() {
+        var dirPath = this.destinationRoot();
+        var files = fs.readdirSync(dirPath);
+
+        var projectFile;
+
+        for(var i in files)
+        {
+            var f = files[i];
+            var fp = path.join(dirPath, f);
+
+            if (fp.endsWith(".fsproj"))
+            {
+                projectFile = fp;
+            }
+        }
+
+        return projectFile;
+    },
+
+    _getProjectFiles: function() {
+        var result = [];
+        var dirPath = path.join(this.destinationRoot(), "..");
+        var files = wrench.readdirSyncRecursive(dirPath);
+
+        for(var i in files)
+        {
+            var f = files[i];
+            if (f.endsWith(".fsproj"))
+            {
+                result.push(f);
+            }
+        }
+
+        return result;
+    },
+
+    _askForReference: function(projectFiles, onChoose) {
+        var choices = projectFiles.map(function(s) {
+            return {"name": s, "value": "./../" + s};
+        });
+
+        var prompts = [{
+            type: 'list',
+            name: 'projectToReference',
+            message: 'Which project should be referenced?',
+            choices: choices
+        }];
+        this.prompt(prompts, function(props) {
+            onChoose(props.projectToReference);
+        }.bind(this));
+    },
+
+    _addReference: function(done) {
+        var log = this.log;
+        var projectFile = this._getProjectFile();
+        var fs = this.fs;
+
+
+        if (projectFile === undefined)
+        {
+            this.log("No project file in local folder found");
+            done();
+            return;
+        }
+
+        this.log("Project file: " + projectFile);
+
+        var projectFiles = this._getProjectFiles();
+
+        this._askForReference(projectFiles, function(selectedFile) {
+            var parser = new xml2js.Parser({preserveChildrenOrder: true});
+            var projectFileContent = fs.read(projectFile);
+
+            parser.parseString(projectFileContent, function(err, result) {
+                log(result);
+
+                var projectReferences;
+
+                for (var i in result.Project.ItemGroup)
+                {
+                    //log(i);
+                    var itemGroup = result.Project.ItemGroup[i];
+
+                    log(itemGroup);
+                    if (itemGroup.ProjectReference !== undefined)
+                    {
+                        projectReferences = itemGroup;
+
+                        break;
+                    }
+                }
+
+                if (projectReferences === undefined) {
+                    var newItemGroup = {ProjectReference: []};
+                    result.Project.ItemGroup.push(newItemGroup);
+                    projectReferences = newItemGroup;
+                }
+
+                //log(itemGroup.ProjectReference);
+                for (var r in projectReferences.ProjectReference)
+                {
+                    var projectReference = itemGroup.ProjectReference[r];
+                    log(projectReference);
+                    if (projectReference.$.Include === selectedFile)
+                    {
+                        log("Already referenced");
+                        break;
+                    }
+                }
+
+                var newEntry = { '$': { Include: selectedFile } };
+                projectReferences.ProjectReference.push(newEntry);
+
+                var builder = new xml2js.Builder();
+                var xml = builder.buildObject(result);
+
+                fs.write(projectFile, xml);
+
+                done();
+            });
+        });
+    },
+
     install: function() {
         var log = this.log
         var done = this.async();
@@ -342,6 +485,12 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         var generator = this;
 
         var isWin = this._isOnWindows();
+
+        if (action === this.ACTION_ADD_REFERENCE_TO_PROJECT)
+        {
+            this._addReference(done);
+            return;
+        }
 
         if(this.fake) {
             if (!this._isOnWindows()) {
