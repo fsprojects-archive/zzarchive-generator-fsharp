@@ -89,6 +89,10 @@ var FSharpGenerator = yeoman.generators.Base.extend({
     repo: 'generator-fsharp',
     branch: 'templates',
 
+    ACTION_CREATE_STANDALONE_PROJECT: 1,
+    ACTION_ADD_PROJECT_TO_SOLUTION: 2,
+    ACTION_CREATE_EMPTY_SOLUTION: 3,
+
     constructor: function() {
         yeoman.generators.Base.apply(this, arguments);
     },
@@ -163,9 +167,9 @@ var FSharpGenerator = yeoman.generators.Base.extend({
             type: 'list',
             name: 'action',
             message: 'What do You want to do?',
-            choices: [{"name": "Create standalone project", "value": 1},
-                      {"name": "Add new project to solution", "value": 2},
-                      {"name": "Create empty solution", "value": 3}
+            choices: [{"name": "Create standalone project", "value": this.ACTION_CREATE_STANDALONE_PROJECT},
+                      {"name": "Add new project to solution", "value": this.ACTION_ADD_PROJECT_TO_SOLUTION},
+                      {"name": "Create empty solution", "value": this.ACTION_CREATE_EMPTY_SOLUTION}
                       ]
         }];
         this.prompt(prompts, function(props) {
@@ -176,7 +180,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
 
     askForProject: function() {
         var done = this.async();
-        if(this.action !== 3) {
+        if(this.action !== this.ACTION_CREATE_EMPTY_SOLUTION) {
             var p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, 'templates.json')
             var choices = JSON.parse(fs.readFileSync(p, "utf8"));
             var prompts = [{
@@ -207,7 +211,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
             this.templatedata.namespace = props.applicationName;
             this.templatedata.applicationname = props.applicationName;
             this.templatedata.guid = uuid.v4();
-            if(this.action === 2) {
+            if(this.action === this.ACTION_ADD_PROJECT_TO_SOLUTION) {
                 this.templatedata.packagesPath = "../packages"
                 this.templatedata.paketPath = "../.paket"
             }
@@ -277,7 +281,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
     writing: function() {
         var log = this.log;
         var p;
-        if (this.action === 3){
+        if (this.action === this.ACTION_CREATE_EMPTY_SOLUTION){
             p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, 'sln')
         }
         else {
@@ -286,7 +290,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         this._copy(p, this.applicationName);
         if(this.paket) {
             var bpath;
-            if(this.action !== 2) {
+            if(this.action !== this.ACTION_ADD_PROJECT_TO_SOLUTION {
                 bpath = path.join(this.applicationName, ".paket", "paket.bootstrapper.exe" );
             }
             else {
@@ -296,7 +300,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
             this.copy(p, bpath);
         }
         if(this.fake) {
-            if (this.action !== 2){
+            if (this.action !== this.ACTION_ADD_PROJECT_TO_SOLUTION){
                 var fakeSource = path.join(this.cacheRoot(), this.username, this.repo, this.branch, ".fake");
                 this._copy(fakeSource, this.applicationName);
             }
@@ -322,7 +326,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
 
         if(this.paket) {
             var bpath;
-            if(this.action !== 2) {
+            if(this.action !== this.ACTION_ADD_PROJECT_TO_SOLUTION) {
                 bpath = path.join(this.applicationName, ".paket", "paket.bootstrapper.exe" );
             }
             else {
@@ -342,7 +346,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
             bootstrapper.on('close', function (code) {
                 var ppath;
                 var cpath;
-                if(action !== 2) {
+                if(action !== this.ACTION_ADD_PROJECT_TO_SOLUTION) {
                     ppath = path.join(dest, appName, ".paket", "paket.exe" );
                     cpath = path.join(dest, appName);
                 }
