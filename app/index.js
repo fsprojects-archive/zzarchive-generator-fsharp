@@ -109,6 +109,12 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         }, reload)
     },
 
+    _getTemplateDirectory : function() {
+        //return path.join(this.sourceRoot(), "..","..","templates");
+
+        return path.join(this.cacheRoot(), this.username, this.repo, this.branch);
+    },
+
     _execManaged : function(file, args, options) {
         if(this._isOnWindows()){
             return spawn(file, args, options);
@@ -198,7 +204,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
     askForProject: function() {
         var done = this.async();
         if(this.action !== this.ACTION_CREATE_EMPTY_SOLUTION) {
-            var p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, 'templates.json')
+            var p = path.join(this._getTemplateDirectory(), 'templates.json')
             var choices = JSON.parse(fs.readFileSync(p, "utf8"));
             var prompts = [{
                 type: 'list',
@@ -299,10 +305,10 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         var log = this.log;
         var p;
         if (this.action === this.ACTION_CREATE_EMPTY_SOLUTION){
-            p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, 'sln')
+            p = path.join(this._getTemplateDirectory(), 'sln')
         }
         else {
-            p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, this.type);
+            p = path.join(this._getTemplateDirectory(), this.type);
         }
         this._copy(p, this.applicationName);
         if(this.paket) {
@@ -313,12 +319,12 @@ var FSharpGenerator = yeoman.generators.Base.extend({
             else {
                 bpath = path.join(".paket", "paket.bootstrapper.exe" );
             }
-            var p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, ".paket", "paket.bootstrapper.exe");
+            var p = path.join(this._getTemplateDirectory(), ".paket", "paket.bootstrapper.exe");
             this.copy(p, bpath);
         }
         if(this.fake) {
             if (this.action !== this.ACTION_ADD_PROJECT_TO_SOLUTION){
-                var fakeSource = path.join(this.cacheRoot(), this.username, this.repo, this.branch, ".fake");
+                var fakeSource = path.join(this._getTemplateDirectory(), ".fake");
                 this._copy(fakeSource, this.applicationName);
             }
         }
