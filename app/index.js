@@ -6,6 +6,7 @@ var path = require('path');
 var fs = require('fs');
 var uuid = require('uuid');
 var spawn = require('child_process').spawn;
+var spawnSync = require('child_process').spawnSync;
 var request = require('request');
 
 var _0777 = parseInt('0777', 8);
@@ -288,6 +289,12 @@ var FSharpGenerator = yeoman.generators.Base.extend({
             var p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, ".paket", "paket.bootstrapper.exe");
             this.copy(p, bpath);
         }
+        if(this.fake) {
+            if (this.action !== 2){
+                var fakeSource = path.join(this.cacheRoot(), this.username, this.repo, this.branch, ".fake");
+                this._copy(fakeSource, this.applicationName);
+            }
+        }
     },
 
     install: function() {
@@ -297,6 +304,22 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         var action = this.action;
         var dest = this.destinationRoot();
         var isWin = /^win/.test(process.platform);
+        var isfake = this.fake;
+        var fs = this.fs;
+
+        if(this.fake) {
+            if (!isWin) {
+                log('adapting file permissions');
+                var buildShPath = path.join(dest, appName, 'build.sh');
+                var chmodProc = spawnSync('chmod', ['+x', buildShPath], {cwd: dest});
+
+                log('err nr:' + chmodProc.status);
+                log('stdout:' + chmodProc.stdout);
+                log('stderr:' + chmodProc.stderr);
+                log('file permissions adapted')
+            }
+        }
+
         if(this.paket) {
             var bpath;
             if(this.action !== 2) {
@@ -352,7 +375,23 @@ var FSharpGenerator = yeoman.generators.Base.extend({
                         log(data.toString());
                     });
                     simplifiy.stdout.on('close', function (data) {
-                        done();
+                        if (isfake) {
+                            var addFake;
+
+                            if(isWin){
+                                addFake = spawn(ppath, ['add', 'nuget', 'FAKE'], {cwd: cpath});
+                            }
+                            else {
+                                addFake = spawn('mono', [ppath, 'add', 'nuget', 'FAKE'], {cwd: cpath});
+                            }
+
+                            addFake.stdout.on('close', function(data) {
+                                done();
+                            })
+                        }
+                        else {
+                            done();
+                        }
                     });
                 });
                 }
