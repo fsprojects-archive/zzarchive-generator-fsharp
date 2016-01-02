@@ -93,14 +93,31 @@ var FSharpGenerator = yeoman.generators.Base.extend({
     ACTION_ADD_PROJECT_TO_SOLUTION: 2,
     ACTION_CREATE_EMPTY_SOLUTION: 3,
 
+
+
     constructor: function() {
         yeoman.generators.Base.apply(this, arguments);
+    },
+
+    _isOnWindows : function() {
+        return /^win/.test(process.platform);
     },
 
     _download : function(t, done, reload) {
         t.remote(t.username, t.repo, t.branch, function (err,r) {
             done();
         }, reload)
+    },
+
+    _execManaged : function(file, args, options) {
+        if(this._isOnWindows()){
+            return spawn(file, args, options);
+        }
+        else {
+            var monoArgs = [file];
+            monoArgs = monoArgs.concat(args);
+            return spawn('mono', monoArgs, options);
+        }
     },
 
     _saveSHA : function (p, sha, old) {
@@ -290,7 +307,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         this._copy(p, this.applicationName);
         if(this.paket) {
             var bpath;
-            if(this.action !== this.ACTION_ADD_PROJECT_TO_SOLUTION {
+            if(this.action !== this.ACTION_ADD_PROJECT_TO_SOLUTION) {
                 bpath = path.join(this.applicationName, ".paket", "paket.bootstrapper.exe" );
             }
             else {
@@ -313,12 +330,15 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         var appName = this.applicationName;
         var action = this.action;
         var dest = this.destinationRoot();
-        var isWin = /^win/.test(process.platform);
         var isfake = this.fake;
         var fs = this.fs;
 
+        var generator = this;
+
+        var isWin = this._isOnWindows();
+
         if(this.fake) {
-            if (!isWin) {
+            if (!this._isOnWindows()) {
                 var buildShPath = path.join(dest, appName, 'build.sh');
                 var chmodProc = spawnSync('chmod', ['+x', buildShPath], {cwd: dest});
             }
@@ -332,13 +352,8 @@ var FSharpGenerator = yeoman.generators.Base.extend({
             else {
                 bpath = path.join(".paket", "paket.bootstrapper.exe" );
             }
-            var bootstrapper;
-            if(isWin){
-                bootstrapper = spawn(bpath);
-            }
-            else {
-                bootstrapper = spawn("mono", [bpath])
-            }
+            var bootstrapper = this._execManaged(bpath, [], {});
+
             bootstrapper.stdout.on('data', function (data) {
                 log(data.toString());
             });
@@ -357,37 +372,21 @@ var FSharpGenerator = yeoman.generators.Base.extend({
                 try{
 
                 log(cpath);
-                var paket;
-                if(isWin){
-                    paket = spawn(ppath, ['convert-from-nuget','-f'], {cwd: cpath});
-                }
-                else {
-                    paket = spawn('mono', [ppath, 'convert-from-nuget','-f'], {cwd: cpath});
-                }
+                var paket = generator._execManaged(ppath, ['convert-from-nuget','-f'], {cwd: cpath});
+
                 paket.stdout.on('data', function (data) {
                     log(data.toString());
                 });
+
                 paket.stdout.on('close', function (data) {
-                    var simplifiy;
-                    if(isWin){
-                        simplifiy = spawn(ppath, ['simplify'], {cwd: cpath});
-                    }
-                    else {
-                        simplifiy = spawn('mono', [ppath, 'simplify',], {cwd: cpath});
-                    }
+                    var simplifiy = generator._execManaged(ppath, ['simplify'], {cwd: cpath});
+
                     simplifiy.stdout.on('data', function (data) {
                         log(data.toString());
                     });
                     simplifiy.stdout.on('close', function (data) {
                         if (isfake) {
-                            var addFake;
-
-                            if(isWin){
-                                addFake = spawn(ppath, ['add', 'nuget', 'FAKE'], {cwd: cpath});
-                            }
-                            else {
-                                addFake = spawn('mono', [ppath, 'add', 'nuget', 'FAKE'], {cwd: cpath});
-                            }
+                            var addFake = generator._execManaged(ppath, ['add', 'nuget', 'FAKE'], {cwd: cpath});
 
                             addFake.stdout.on('close', function(data) {
                                 done();
