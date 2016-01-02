@@ -6,6 +6,7 @@ var path = require('path');
 var fs = require('fs');
 var uuid = require('uuid');
 var spawn = require('child_process').spawn;
+var spawnSync = require('child_process').spawnSync;
 var request = require('request');
 
 var _0777 = parseInt('0777', 8);
@@ -234,6 +235,26 @@ var FSharpGenerator = yeoman.generators.Base.extend({
 
     },
 
+    askForFake: function() {
+        var done = this.async();
+        var prompts = [{
+            type: 'list',
+            name: 'fake',
+            message: 'Do You want to use FAKE?',
+            choices: [{"name": "Yes", "value": true}, {"name": "No", "value": false}]
+        }];
+
+        if (this.paket) {
+            this.prompt(prompts, function(props) {
+                this.fake = props.fake;
+                done();
+            }.bind(this));
+            return;
+        }
+
+        done();
+    },
+
     _copy: function(dirPath, targetDirPath){
 
         var files = fs.readdirSync(dirPath);
@@ -274,6 +295,12 @@ var FSharpGenerator = yeoman.generators.Base.extend({
             var p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, ".paket", "paket.bootstrapper.exe");
             this.copy(p, bpath);
         }
+        if(this.fake) {
+            if (this.action !== 2){
+                var fakeSource = path.join(this.cacheRoot(), this.username, this.repo, this.branch, ".fake");
+                this._copy(fakeSource, this.applicationName);
+            }
+        }
     },
 
     install: function() {
@@ -283,6 +310,16 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         var action = this.action;
         var dest = this.destinationRoot();
         var isWin = /^win/.test(process.platform);
+        var isfake = this.fake;
+        var fs = this.fs;
+
+        if(this.fake) {
+            if (!isWin) {
+                var buildShPath = path.join(dest, appName, 'build.sh');
+                var chmodProc = spawnSync('chmod', ['+x', buildShPath], {cwd: dest});
+            }
+        }
+
         if(this.paket) {
             var bpath;
             if(this.action !== 2) {
@@ -338,7 +375,23 @@ var FSharpGenerator = yeoman.generators.Base.extend({
                         log(data.toString());
                     });
                     simplifiy.stdout.on('close', function (data) {
-                        done();
+                        if (isfake) {
+                            var addFake;
+
+                            if(isWin){
+                                addFake = spawn(ppath, ['add', 'nuget', 'FAKE'], {cwd: cpath});
+                            }
+                            else {
+                                addFake = spawn('mono', [ppath, 'add', 'nuget', 'FAKE'], {cwd: cpath});
+                            }
+
+                            addFake.stdout.on('close', function(data) {
+                                done();
+                            })
+                        }
+                        else {
+                            done();
+                        }
                     });
                 });
                 }
