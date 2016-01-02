@@ -249,6 +249,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
                 this.fake = props.fake;
                 done();
             }.bind(this));
+            return;
         }
 
         done();
