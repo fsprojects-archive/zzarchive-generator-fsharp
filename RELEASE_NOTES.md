@@ -1,3 +1,8 @@
+#### 0.5.0 - 05.12.2015
+* Add FAKE support
+* Add PCL templates
+* Update to Suave 1.0.0
+
 #### 0.4.5 - 05.12.2015
 * Add paket simplify on the end of process.
 
