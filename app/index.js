@@ -6,7 +6,10 @@ var path = require('path');
 var fs = require('fs');
 var uuid = require('uuid');
 var spawn = require('child_process').spawn;
+var spawnSync = require('child_process').spawnSync;
 var request = require('request');
+var libxmljs = require("libxmljs");
+var wrench = require('wrench');
 
 var _0777 = parseInt('0777', 8);
 var greeting =
@@ -88,14 +91,42 @@ var FSharpGenerator = yeoman.generators.Base.extend({
     repo: 'generator-fsharp',
     branch: 'templates',
 
+    ACTION_CREATE_STANDALONE_PROJECT: 1,
+    ACTION_ADD_PROJECT_TO_SOLUTION: 2,
+    ACTION_CREATE_EMPTY_SOLUTION: 3,
+    ACTION_ADD_REFERENCE_TO_PROJECT: 4,
+
+
+
     constructor: function() {
         yeoman.generators.Base.apply(this, arguments);
+    },
+
+    _isOnWindows : function() {
+        return /^win/.test(process.platform);
     },
 
     _download : function(t, done, reload) {
         t.remote(t.username, t.repo, t.branch, function (err,r) {
             done();
         }, reload)
+    },
+
+    _getTemplateDirectory : function() {
+        // return path.join(this.sourceRoot(), "..","..","templates");
+
+        return path.join(this.cacheRoot(), this.username, this.repo, this.branch);
+    },
+
+    _execManaged : function(file, args, options) {
+        if(this._isOnWindows()){
+            return spawn(file, args, options);
+        }
+        else {
+            var monoArgs = [file];
+            monoArgs = monoArgs.concat(args);
+            return spawn('mono', monoArgs, options);
+        }
     },
 
     _saveSHA : function (p, sha, old) {
@@ -162,9 +193,10 @@ var FSharpGenerator = yeoman.generators.Base.extend({
             type: 'list',
             name: 'action',
             message: 'What do You want to do?',
-            choices: [{"name": "Create standalone project", "value": 1},
-                      {"name": "Add new project to solution", "value": 2},
-                      {"name": "Create empty solution", "value": 3}
+            choices: [{"name": "Create standalone project", "value": this.ACTION_CREATE_STANDALONE_PROJECT},
+                      {"name": "Add new project to solution", "value": this.ACTION_ADD_PROJECT_TO_SOLUTION},
+                      {"name": "Create empty solution", "value": this.ACTION_CREATE_EMPTY_SOLUTION},
+                      {"name": "Add reference to project", "value": this.ACTION_ADD_REFERENCE_TO_PROJECT}
                       ]
         }];
         this.prompt(prompts, function(props) {
@@ -174,9 +206,12 @@ var FSharpGenerator = yeoman.generators.Base.extend({
     },
 
     askForProject: function() {
+        if (this.action === this.ACTION_ADD_REFERENCE_TO_PROJECT)
+            return;
+
         var done = this.async();
-        if(this.action !== 3) {
-            var p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, 'templates.json')
+        if(this.action !== this.ACTION_CREATE_EMPTY_SOLUTION) {
+            var p = path.join(this._getTemplateDirectory(), 'templates.json')
             var choices = JSON.parse(fs.readFileSync(p, "utf8"));
             var prompts = [{
                 type: 'list',
@@ -196,6 +231,9 @@ var FSharpGenerator = yeoman.generators.Base.extend({
     },
 
     askForName: function() {
+        if (this.action === this.ACTION_ADD_REFERENCE_TO_PROJECT)
+            return;
+
         var done = this.async();
         var prompts = [{
             name: 'applicationName',
@@ -206,7 +244,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
             this.templatedata.namespace = props.applicationName;
             this.templatedata.applicationname = props.applicationName;
             this.templatedata.guid = uuid.v4();
-            if(this.action === 2) {
+            if(this.action === this.ACTION_ADD_PROJECT_TO_SOLUTION) {
                 this.templatedata.packagesPath = "../packages"
                 this.templatedata.paketPath = "../.paket"
             }
@@ -220,6 +258,9 @@ var FSharpGenerator = yeoman.generators.Base.extend({
     },
 
     askForPaket: function() {
+        if (this.action === this.ACTION_ADD_REFERENCE_TO_PROJECT)
+            return;
+
         var done = this.async();
         var prompts = [{
             type: 'list',
@@ -232,6 +273,29 @@ var FSharpGenerator = yeoman.generators.Base.extend({
             done();
         }.bind(this));
 
+    },
+
+    askForFake: function() {
+        if (this.action === this.ACTION_ADD_REFERENCE_TO_PROJECT)
+            return;
+
+        var done = this.async();
+        var prompts = [{
+            type: 'list',
+            name: 'fake',
+            message: 'Do You want to use FAKE?',
+            choices: [{"name": "Yes", "value": true}, {"name": "No", "value": false}]
+        }];
+
+        if (this.paket) {
+            this.prompt(prompts, function(props) {
+                this.fake = props.fake;
+                done();
+            }.bind(this));
+            return;
+        }
+
+        done();
     },
 
     _copy: function(dirPath, targetDirPath){
@@ -254,26 +318,180 @@ var FSharpGenerator = yeoman.generators.Base.extend({
     },
 
     writing: function() {
+        if (this.action === this.ACTION_ADD_REFERENCE_TO_PROJECT)
+            return;
+
         var log = this.log;
         var p;
-        if (this.action === 3){
-            p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, 'sln')
+        if (this.action === this.ACTION_CREATE_EMPTY_SOLUTION){
+            p = path.join(this._getTemplateDirectory(), 'sln')
         }
         else {
-            p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, this.type);
+            p = path.join(this._getTemplateDirectory(), this.type);
         }
         this._copy(p, this.applicationName);
         if(this.paket) {
             var bpath;
-            if(this.action !== 2) {
+            if(this.action !== this.ACTION_ADD_PROJECT_TO_SOLUTION) {
                 bpath = path.join(this.applicationName, ".paket", "paket.bootstrapper.exe" );
             }
             else {
                 bpath = path.join(".paket", "paket.bootstrapper.exe" );
             }
-            var p = path.join(this.cacheRoot(), this.username, this.repo, this.branch, ".paket", "paket.bootstrapper.exe");
+            var p = path.join(this._getTemplateDirectory(), ".paket", "paket.bootstrapper.exe");
             this.copy(p, bpath);
         }
+        if(this.fake) {
+            if (this.action !== this.ACTION_ADD_PROJECT_TO_SOLUTION){
+                var fakeSource = path.join(this._getTemplateDirectory(), ".fake");
+                this._copy(fakeSource, this.applicationName);
+            }
+        }
+    },
+
+    _getProjectFile: function() {
+        var dirPath = this.destinationRoot();
+        var files = fs.readdirSync(dirPath);
+
+        var projectFile;
+
+        for(var i in files)
+        {
+            var f = files[i];
+            var fp = path.join(dirPath, f);
+
+            if (fp.endsWith(".fsproj"))
+            {
+                projectFile = fp;
+            }
+        }
+
+        return projectFile;
+    },
+
+    _getProjectFiles: function() {
+        var result = [];
+        var dirPath = path.join(this.destinationRoot(), "..");
+        var files = wrench.readdirSyncRecursive(dirPath);
+
+        for(var i in files)
+        {
+            var f = files[i];
+            if (f.endsWith(".fsproj"))
+            {
+                result.push(f);
+            }
+        }
+
+        return result;
+    },
+
+    _askForReference: function(projectFiles, onChoose) {
+        var choices = projectFiles.map(function(s) {
+            return {"name": s, "value": "./../" + s};
+        });
+
+        var prompts = [{
+            type: 'list',
+            name: 'projectToReference',
+            message: 'Which project should be referenced?',
+            choices: choices
+        }];
+        this.prompt(prompts, function(props) {
+            onChoose(props.projectToReference);
+        }.bind(this));
+    },
+
+    _addReference: function(done) {
+        var log = this.log;
+        var projectFile = this._getProjectFile();
+        var fs = this.fs;
+
+
+        if (projectFile === undefined)
+        {
+            this.log("No project file in local folder found");
+            done();
+            return;
+        }
+
+        this.log("Project file: " + projectFile);
+
+        var projectFiles = this._getProjectFiles();
+
+        this._askForReference(projectFiles, function(selectedFile) {
+
+            var projectFileContent = fs.read(projectFile);
+
+            // log(projectFileContent);
+
+            var projectXml = libxmljs.parseXmlString(projectFileContent);
+            var root = projectXml.root();
+
+            var childNodes = root.childNodes();
+
+            var projectReferenceItemGroup;
+            var lastItemGroup;
+
+            for (var c in childNodes)
+            {
+                var node = childNodes[c];
+                // log(node.toString());
+
+                if (node.name() == "ItemGroup")
+                {
+                    lastItemGroup = node;
+
+                    // log("ItemGroup");
+                    for (var cc in node.childNodes())
+                    {
+                        var itemGroupNode = node.childNodes()[cc];
+                        if (itemGroupNode.name() == "ProjectReference")
+                        {
+                            // log("ProjectReference");
+                            projectReferenceItemGroup = node;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (projectReferenceItemGroup === undefined)
+            {
+                var newItemGroup = new libxmljs.Element(projectXml, "ItemGroup");
+                projectReferenceItemGroup = lastItemGroup.addNextSibling(newItemGroup);
+            }
+
+            var alreadyReferenced = false;
+            for (var cc in projectReferenceItemGroup.childNodes())
+            {
+                var itemGroupNode = projectReferenceItemGroup.childNodes()[cc];
+                if (itemGroupNode.name() == "ProjectReference")
+                {
+                    // log(itemGroupNode.attr("Include").value());
+                    if (itemGroupNode.attr("Include").value() === selectedFile)
+                    {
+                        alreadyReferenced = true;
+                    }
+                }
+            }
+
+            if (alreadyReferenced) {
+                log(selectedFile + " is already referenced");
+            }
+            else {
+                var projectReferenceNode = new libxmljs.Element(projectXml, "ProjectReference");
+                projectReferenceNode.attr({Include: selectedFile});
+
+                projectReferenceItemGroup.addChild(projectReferenceNode);
+
+                var xml = projectXml.toString();
+                log("Please press Y for updating the existing file");
+                fs.write(projectFile, xml);
+            }
+
+            done();
+        });
     },
 
     install: function() {
@@ -282,22 +500,36 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         var appName = this.applicationName;
         var action = this.action;
         var dest = this.destinationRoot();
-        var isWin = /^win/.test(process.platform);
+        var isfake = this.fake;
+        var fs = this.fs;
+
+        var generator = this;
+
+        var isWin = this._isOnWindows();
+
+        if (action === this.ACTION_ADD_REFERENCE_TO_PROJECT)
+        {
+            this._addReference(done);
+            return;
+        }
+
+        if(this.fake) {
+            if (!this._isOnWindows()) {
+                var buildShPath = path.join(dest, appName, 'build.sh');
+                var chmodProc = spawnSync('chmod', ['+x', buildShPath], {cwd: dest});
+            }
+        }
+
         if(this.paket) {
             var bpath;
-            if(this.action !== 2) {
+            if(this.action !== this.ACTION_ADD_PROJECT_TO_SOLUTION) {
                 bpath = path.join(this.applicationName, ".paket", "paket.bootstrapper.exe" );
             }
             else {
                 bpath = path.join(".paket", "paket.bootstrapper.exe" );
             }
-            var bootstrapper;
-            if(isWin){
-                bootstrapper = spawn(bpath);
-            }
-            else {
-                bootstrapper = spawn("mono", [bpath])
-            }
+            var bootstrapper = this._execManaged(bpath, [], {});
+
             bootstrapper.stdout.on('data', function (data) {
                 log(data.toString());
             });
@@ -305,7 +537,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
             bootstrapper.on('close', function (code) {
                 var ppath;
                 var cpath;
-                if(action !== 2) {
+                if(action !== this.ACTION_ADD_PROJECT_TO_SOLUTION) {
                     ppath = path.join(dest, appName, ".paket", "paket.exe" );
                     cpath = path.join(dest, appName);
                 }
@@ -316,29 +548,29 @@ var FSharpGenerator = yeoman.generators.Base.extend({
                 try{
 
                 log(cpath);
-                var paket;
-                if(isWin){
-                    paket = spawn(ppath, ['convert-from-nuget','-f'], {cwd: cpath});
-                }
-                else {
-                    paket = spawn('mono', [ppath, 'convert-from-nuget','-f'], {cwd: cpath});
-                }
+                var paket = generator._execManaged(ppath, ['convert-from-nuget','-f'], {cwd: cpath});
+
                 paket.stdout.on('data', function (data) {
                     log(data.toString());
                 });
+
                 paket.stdout.on('close', function (data) {
-                    var simplifiy;
-                    if(isWin){
-                        simplifiy = spawn(ppath, ['simplify'], {cwd: cpath});
-                    }
-                    else {
-                        simplifiy = spawn('mono', [ppath, 'simplify',], {cwd: cpath});
-                    }
+                    var simplifiy = generator._execManaged(ppath, ['simplify'], {cwd: cpath});
+
                     simplifiy.stdout.on('data', function (data) {
                         log(data.toString());
                     });
                     simplifiy.stdout.on('close', function (data) {
-                        done();
+                        if (isfake) {
+                            var addFake = generator._execManaged(ppath, ['add', 'nuget', 'FAKE'], {cwd: cpath});
+
+                            addFake.stdout.on('close', function(data) {
+                                done();
+                            })
+                        }
+                        else {
+                            done();
+                        }
                     });
                 });
                 }
