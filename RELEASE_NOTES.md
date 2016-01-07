@@ -1,4 +1,7 @@
-#### 0.5.0 - 05.12.2015
+#### 0.5.1 - 07.01.2016
+* Remove add reference command
+
+#### 0.5.0 - 05.01.2016
 * Add FAKE support
 * Add PCL templates
 * Update to Suave 1.0.0
