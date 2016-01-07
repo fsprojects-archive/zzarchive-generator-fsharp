@@ -8,7 +8,7 @@ var uuid = require('uuid');
 var spawn = require('child_process').spawn;
 var spawnSync = require('child_process').spawnSync;
 var request = require('request');
-var libxmljs = require("libxmljs");
+//var libxmljs = require("libxmljs");
 var wrench = require('wrench');
 
 var _0777 = parseInt('0777', 8);
@@ -196,7 +196,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
             choices: [{"name": "Create standalone project", "value": this.ACTION_CREATE_STANDALONE_PROJECT},
                       {"name": "Add new project to solution", "value": this.ACTION_ADD_PROJECT_TO_SOLUTION},
                       {"name": "Create empty solution", "value": this.ACTION_CREATE_EMPTY_SOLUTION},
-                      {"name": "Add reference to project", "value": this.ACTION_ADD_REFERENCE_TO_PROJECT}
+                     // {"name": "Add reference to project", "value": this.ACTION_ADD_REFERENCE_TO_PROJECT}
                       ]
         }];
         this.prompt(prompts, function(props) {
@@ -385,6 +385,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
 
         return result;
     },
+    /*
 
     _askForReference: function(projectFiles, onChoose) {
         var choices = projectFiles.map(function(s) {
@@ -493,6 +494,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
             done();
         });
     },
+    */
 
     install: function() {
         var log = this.log
@@ -509,7 +511,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
 
         if (action === this.ACTION_ADD_REFERENCE_TO_PROJECT)
         {
-            this._addReference(done);
+            //this._addReference(done);
             return;
         }
 
