@@ -104,6 +104,10 @@ Target "Release" (fun _ ->
 Target "Default" DoNothing
 
 "PushDevelop"
+==> "ReleaseTemplates"
+==> "Release"
+
+"PushDevelop"
  ==> "PushGenerator"
  ==> "Version"
  ==> "Release"
