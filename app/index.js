@@ -113,7 +113,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
     },
 
     _getTemplateDirectory : function() {
-        return path.join(this.sourceRoot(), "..","..","templates");
+        //return path.join(this.sourceRoot(), "..","..","templates");
 
         return path.join(this.cacheRoot(), this.username, this.repo, this.branch);
     },
@@ -408,7 +408,6 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         var projectFile = this._getProjectFile();
         var fs = this.fs;
 
-
         if (projectFile === undefined)
         {
             this.log("No project file in local folder found");
@@ -423,9 +422,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         this._askForReference(projectFiles, function(selectedFile) {
 
             var projectFileContent = fs.read(projectFile);
-            var DOMParser = xmldom.DOMParser;
-            var domParser = new DOMParser();
-            // log(projectFileContent);
+            var domParser = new xmldom.DOMParser();
 
             var projectXml = domParser.parseFromString(projectFileContent, 'text/xml');
 
@@ -436,21 +433,17 @@ var FSharpGenerator = yeoman.generators.Base.extend({
             for (var c in itemGroupNodes)
             {
                 var node = itemGroupNodes[c];
-                //log(node);
 
                 for (var cc in node.childNodes)
                 {
                     var itemGroupNode = node.childNodes[cc];
                     if (itemGroupNode.nodeName == "ProjectReference")
                     {
-                        // log("ProjectReference");
                         projectReferenceItemGroup = node;
                         break;
                     }
                 }
-
             }
-
 
             if (projectReferenceItemGroup === undefined)
             {
@@ -465,7 +458,6 @@ var FSharpGenerator = yeoman.generators.Base.extend({
                 var itemGroupNode = projectReferenceItemGroup.childNodes[cc];
                 if (itemGroupNode.nodeName == "ProjectReference")
                 {
-                    // log(itemGroupNode.attr("Include").value());
                     if (itemGroupNode.getAttribute("Include") === selectedFile)
                     {
                         alreadyReferenced = true;
@@ -477,14 +469,15 @@ var FSharpGenerator = yeoman.generators.Base.extend({
                 log(selectedFile + " is already referenced");
             }
             else {
-                var projectReferenceNode = new projectXml.createElement("ProjectReference");
-                projectReferenceItemGroup.appendChild(projectReferenceNode);
-                projectReferenceNode.ownerDocument = projectXml; //TODO: find out why this is necessary
+                var projectReferenceNode = projectXml.createElement("ProjectReference");
                 projectReferenceNode.setAttribute("Include", selectedFile);
+
+                projectReferenceItemGroup.appendChild(projectReferenceNode);
 
                 var xmlSerialzier = new xmldom.XMLSerializer()
                 var xml = xmlSerialzier.serializeToString(projectXml);
                 log("Please press Y for updating the existing file");
+
                 //log(xml);
                 fs.write(projectFile, xml);
             }
