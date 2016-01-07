@@ -1,3 +1,7 @@
+#### 0.5.2 - 07.01.2016
+* Reimplement add reference command
+* Add Azure Service Fabric templates
+
 #### 0.5.1 - 07.01.2016
 * Remove add reference command
 

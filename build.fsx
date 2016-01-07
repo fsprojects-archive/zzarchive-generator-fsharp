@@ -105,7 +105,6 @@ Target "Default" DoNothing
 
 "PushDevelop"
 ==> "ReleaseTemplates"
-==> "Release"
 
 "PushDevelop"
  ==> "PushGenerator"
