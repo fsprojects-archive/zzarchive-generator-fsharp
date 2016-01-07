@@ -8,7 +8,7 @@ var uuid = require('uuid');
 var spawn = require('child_process').spawn;
 var spawnSync = require('child_process').spawnSync;
 var request = require('request');
-//var libxmljs = require("libxmljs");
+var xmldom = require("xmldom");
 var wrench = require('wrench');
 
 var _0777 = parseInt('0777', 8);
@@ -113,7 +113,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
     },
 
     _getTemplateDirectory : function() {
-        // return path.join(this.sourceRoot(), "..","..","templates");
+        return path.join(this.sourceRoot(), "..","..","templates");
 
         return path.join(this.cacheRoot(), this.username, this.repo, this.branch);
     },
@@ -196,7 +196,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
             choices: [{"name": "Create standalone project", "value": this.ACTION_CREATE_STANDALONE_PROJECT},
                       {"name": "Add new project to solution", "value": this.ACTION_ADD_PROJECT_TO_SOLUTION},
                       {"name": "Create empty solution", "value": this.ACTION_CREATE_EMPTY_SOLUTION},
-                     // {"name": "Add reference to project", "value": this.ACTION_ADD_REFERENCE_TO_PROJECT}
+                      {"name": "Add reference to project", "value": this.ACTION_ADD_REFERENCE_TO_PROJECT}
                       ]
         }];
         this.prompt(prompts, function(props) {
@@ -385,7 +385,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
 
         return result;
     },
-    /*
+
 
     _askForReference: function(projectFiles, onChoose) {
         var choices = projectFiles.map(function(s) {
@@ -423,54 +423,50 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         this._askForReference(projectFiles, function(selectedFile) {
 
             var projectFileContent = fs.read(projectFile);
-
+            var DOMParser = xmldom.DOMParser;
+            var domParser = new DOMParser();
             // log(projectFileContent);
 
-            var projectXml = libxmljs.parseXmlString(projectFileContent);
-            var root = projectXml.root();
-
-            var childNodes = root.childNodes();
+            var projectXml = domParser.parseFromString(projectFileContent, 'text/xml');
 
             var projectReferenceItemGroup;
-            var lastItemGroup;
 
-            for (var c in childNodes)
+            var itemGroupNodes = projectXml.getElementsByTagName("ItemGroup");
+
+            for (var c in itemGroupNodes)
             {
-                var node = childNodes[c];
-                // log(node.toString());
+                var node = itemGroupNodes[c];
+                //log(node);
 
-                if (node.name() == "ItemGroup")
+                for (var cc in node.childNodes)
                 {
-                    lastItemGroup = node;
-
-                    // log("ItemGroup");
-                    for (var cc in node.childNodes())
+                    var itemGroupNode = node.childNodes[cc];
+                    if (itemGroupNode.nodeName == "ProjectReference")
                     {
-                        var itemGroupNode = node.childNodes()[cc];
-                        if (itemGroupNode.name() == "ProjectReference")
-                        {
-                            // log("ProjectReference");
-                            projectReferenceItemGroup = node;
-                            break;
-                        }
+                        // log("ProjectReference");
+                        projectReferenceItemGroup = node;
+                        break;
                     }
                 }
+
             }
+
 
             if (projectReferenceItemGroup === undefined)
             {
-                var newItemGroup = new libxmljs.Element(projectXml, "ItemGroup");
-                projectReferenceItemGroup = lastItemGroup.addNextSibling(newItemGroup);
+                var newItemGroup = projectXml.createElement("ItemGroup");
+                var lastItemGroup = itemGroupNodes[itemGroupNodes.length-1];
+                projectReferenceItemGroup = projectXml.insertBefore(newItemGroup, lastItemGroup);
             }
 
             var alreadyReferenced = false;
-            for (var cc in projectReferenceItemGroup.childNodes())
+            for (var cc in projectReferenceItemGroup.childNodes)
             {
-                var itemGroupNode = projectReferenceItemGroup.childNodes()[cc];
-                if (itemGroupNode.name() == "ProjectReference")
+                var itemGroupNode = projectReferenceItemGroup.childNodes[cc];
+                if (itemGroupNode.nodeName == "ProjectReference")
                 {
                     // log(itemGroupNode.attr("Include").value());
-                    if (itemGroupNode.attr("Include").value() === selectedFile)
+                    if (itemGroupNode.getAttribute("Include") === selectedFile)
                     {
                         alreadyReferenced = true;
                     }
@@ -481,20 +477,22 @@ var FSharpGenerator = yeoman.generators.Base.extend({
                 log(selectedFile + " is already referenced");
             }
             else {
-                var projectReferenceNode = new libxmljs.Element(projectXml, "ProjectReference");
-                projectReferenceNode.attr({Include: selectedFile});
+                var projectReferenceNode = new projectXml.createElement("ProjectReference");
+                projectReferenceItemGroup.appendChild(projectReferenceNode);
+                projectReferenceNode.ownerDocument = projectXml; //TODO: find out why this is necessary
+                projectReferenceNode.setAttribute("Include", selectedFile);
 
-                projectReferenceItemGroup.addChild(projectReferenceNode);
-
-                var xml = projectXml.toString();
+                var xmlSerialzier = new xmldom.XMLSerializer()
+                var xml = xmlSerialzier.serializeToString(projectXml);
                 log("Please press Y for updating the existing file");
+                //log(xml);
                 fs.write(projectFile, xml);
             }
 
             done();
         });
     },
-    */
+
 
     install: function() {
         var log = this.log
@@ -511,7 +509,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
 
         if (action === this.ACTION_ADD_REFERENCE_TO_PROJECT)
         {
-            //this._addReference(done);
+            this._addReference(done);
             return;
         }
 
