@@ -27,6 +27,7 @@
     "request": "*",
     "uuid": "^2.0.1",
     "wrench": "^1.5.8",
+    "xmldom": "^0.1.19",
     "yeoman-generator": "^0.19.0",
     "yosay": "^1.0.0"
   },
