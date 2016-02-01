@@ -10,6 +10,7 @@
         { "name": "FsLab Journal", "value": "fslabjournal" },
         { "name": "WebSharper.UI.Next SPA", "value": "websharperspa" },
         { "name": "WebSharper.UI.Next Client-Server Application", "value": "websharperserverclient" },
+        { "name": "WebSharper.UI.Next Suave", "value": "websharpersuave" },
         { "name": "Azure Service Fabric Host", "value": "servicefabrichost" },
         { "name": "Azure Service Fabric Suave Stateless Service", "value": "servicefabricsuavestateless" }
     ]
