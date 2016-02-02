@@ -1,8 +1,8 @@
 # <%= namespace %>
 
 A [websharper.suave](https://github.com/intellifactory/websharper.suave)
-application. NuGet support will likely require adding dependencies to the
-project file.
+application. __Only tested with Paket__ - NuGet support will likely require
+adding dependencies to the project file.
 
 ## Logging
 
