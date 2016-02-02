@@ -58,5 +58,16 @@ module Site =
 
     open WebSharper.Suave
     open Suave.Web
+    open Suave.Logging
+    open System
+    open System.IO
+    open System.Reflection
 
-    do startWebServer defaultConfig (WebSharperAdapter.ToWebPart Main)
+    let codeBase = Assembly.GetEntryAssembly().CodeBase
+    let builder = UriBuilder(codeBase)
+    let pathToAssembly = Uri.UnescapeDataString(builder.Path)
+    let rootPath = Path.GetDirectoryName(Path.Combine(pathToAssembly, "../../"))
+    (*let debugConfig = { defaultConfig with logger = Loggers.saneDefaultsFor LogLevel.Verbose }*)
+
+    do startWebServer defaultConfig (WebSharperAdapter.ToWebPart (Main, RootDirectory=rootPath))
+
