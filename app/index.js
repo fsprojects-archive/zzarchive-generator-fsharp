@@ -192,7 +192,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         var prompts = [{
             type: 'list',
             name: 'action',
-            message: 'What do You want to do?',
+            message: 'What do you want to do?',
             choices: [{"name": "Create standalone project", "value": this.ACTION_CREATE_STANDALONE_PROJECT},
                       {"name": "Add new project to solution", "value": this.ACTION_ADD_PROJECT_TO_SOLUTION},
                       {"name": "Create empty solution", "value": this.ACTION_CREATE_EMPTY_SOLUTION},
@@ -265,7 +265,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         var prompts = [{
             type: 'list',
             name: 'paket',
-            message: 'Do You want to use Paket?',
+            message: 'Do you want to use Paket?',
             choices: [{"name": "Yes", "value": true}, {"name": "No", "value": false}]
         }];
         this.prompt(prompts, function(props) {
@@ -283,7 +283,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         var prompts = [{
             type: 'list',
             name: 'fake',
-            message: 'Do You want to use FAKE?',
+            message: 'Do you want to use FAKE?',
             choices: [{"name": "Yes", "value": true}, {"name": "No", "value": false}]
         }];
 
