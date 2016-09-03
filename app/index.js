@@ -9,7 +9,7 @@ var spawn = require('child_process').spawn;
 var spawnSync = require('child_process').spawnSync;
 var request = require('request');
 var xmldom = require("xmldom");
-var wrench = require('wrench');
+var fse = require('fs-extra');
 
 var _0777 = parseInt('0777', 8);
 var greeting =
@@ -372,18 +372,18 @@ var FSharpGenerator = yeoman.generators.Base.extend({
     _getProjectFiles: function() {
         var result = [];
         var dirPath = path.join(this.destinationRoot(), "..");
-        var files = wrench.readdirSyncRecursive(dirPath);
-
-        for(var i in files)
-        {
-            var f = files[i];
-            if (f.endsWith(".fsproj"))
-            {
-                result.push(f);
-            }
-        }
-
-        return result;
+        var fsprojFilter = function(item){
+            path.extname(item.path) === '.fsproj'
+        };
+        return new Promise(function(resolve, reject){
+            fse.walk(dirPath, {filter: fsprojFilter})
+            .on('data', function(item){
+                result.push(item.path);
+            })
+            .on('end', function(){
+                resolve(result);
+            })
+        });
     },
 
 
@@ -407,6 +407,7 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         var log = this.log;
         var projectFile = this._getProjectFile();
         var fs = this.fs;
+        var self = this;
 
         if (projectFile === undefined)
         {
@@ -417,73 +418,73 @@ var FSharpGenerator = yeoman.generators.Base.extend({
 
         this.log("Project file: " + projectFile);
 
-        var projectFiles = this._getProjectFiles();
+        this._getProjectFiles().then(function(projectFiles){
+            self._askForReference(projectFiles, function(selectedFile) {
 
-        this._askForReference(projectFiles, function(selectedFile) {
+                var projectFileContent = fs.read(projectFile);
+                var domParser = new xmldom.DOMParser();
 
-            var projectFileContent = fs.read(projectFile);
-            var domParser = new xmldom.DOMParser();
+                var projectXml = domParser.parseFromString(projectFileContent, 'text/xml');
 
-            var projectXml = domParser.parseFromString(projectFileContent, 'text/xml');
+                var projectReferenceItemGroup;
 
-            var projectReferenceItemGroup;
+                var itemGroupNodes = projectXml.getElementsByTagName("ItemGroup");
 
-            var itemGroupNodes = projectXml.getElementsByTagName("ItemGroup");
-
-            for (var c in itemGroupNodes)
-            {
-                var node = itemGroupNodes[c];
-
-                for (var cc in node.childNodes)
+                for (var c in itemGroupNodes)
                 {
-                    var itemGroupNode = node.childNodes[cc];
+                    var node = itemGroupNodes[c];
+
+                    for (var cc in node.childNodes)
+                    {
+                        var itemGroupNode = node.childNodes[cc];
+                        if (itemGroupNode.nodeName == "ProjectReference")
+                        {
+                            projectReferenceItemGroup = node;
+                            break;
+                        }
+                    }
+                }
+
+                if (projectReferenceItemGroup === undefined)
+                {
+                    var newItemGroup = projectXml.createElement("ItemGroup");
+                    var lastItemGroup = itemGroupNodes[itemGroupNodes.length-1];
+                    projectReferenceItemGroup = projectXml.insertBefore(newItemGroup, lastItemGroup);
+                }
+
+                var alreadyReferenced = false;
+                for (var cc in projectReferenceItemGroup.childNodes)
+                {
+                    var itemGroupNode = projectReferenceItemGroup.childNodes[cc];
                     if (itemGroupNode.nodeName == "ProjectReference")
                     {
-                        projectReferenceItemGroup = node;
-                        break;
+                        if (itemGroupNode.getAttribute("Include") === selectedFile)
+                        {
+                            alreadyReferenced = true;
+                        }
                     }
                 }
-            }
 
-            if (projectReferenceItemGroup === undefined)
-            {
-                var newItemGroup = projectXml.createElement("ItemGroup");
-                var lastItemGroup = itemGroupNodes[itemGroupNodes.length-1];
-                projectReferenceItemGroup = projectXml.insertBefore(newItemGroup, lastItemGroup);
-            }
-
-            var alreadyReferenced = false;
-            for (var cc in projectReferenceItemGroup.childNodes)
-            {
-                var itemGroupNode = projectReferenceItemGroup.childNodes[cc];
-                if (itemGroupNode.nodeName == "ProjectReference")
-                {
-                    if (itemGroupNode.getAttribute("Include") === selectedFile)
-                    {
-                        alreadyReferenced = true;
-                    }
+                if (alreadyReferenced) {
+                    log(selectedFile + " is already referenced");
                 }
-            }
+                else {
+                    var projectReferenceNode = projectXml.createElement("ProjectReference");
+                    projectReferenceNode.setAttribute("Include", selectedFile);
 
-            if (alreadyReferenced) {
-                log(selectedFile + " is already referenced");
-            }
-            else {
-                var projectReferenceNode = projectXml.createElement("ProjectReference");
-                projectReferenceNode.setAttribute("Include", selectedFile);
+                    projectReferenceItemGroup.appendChild(projectReferenceNode);
 
-                projectReferenceItemGroup.appendChild(projectReferenceNode);
+                    var xmlSerialzier = new xmldom.XMLSerializer()
+                    var xml = xmlSerialzier.serializeToString(projectXml);
+                    log("Please press Y for updating the existing file");
 
-                var xmlSerialzier = new xmldom.XMLSerializer()
-                var xml = xmlSerialzier.serializeToString(projectXml);
-                log("Please press Y for updating the existing file");
+                    //log(xml);
+                    fs.write(projectFile, xml);
+                }
 
-                //log(xml);
-                fs.write(projectFile, xml);
-            }
-
-            done();
-        });
+                done();
+            });
+        }, function(){log("missing .fsproj")});
     },
 
 
