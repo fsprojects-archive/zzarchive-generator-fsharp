@@ -237,6 +237,14 @@ var FSharpGenerator = yeoman.generators.Base.extend({
         var done = this.async();
         var prompts = [{
             name: 'applicationName',
+            validate: function(input) {
+                if (input.match(/[\u0000-\u0040]/)) {
+                    return "Invalid module name";
+                }
+                else {
+                    return true;
+                }
+            },
             message: 'What\'s the name of your application?',
             default: this.type
         }];
