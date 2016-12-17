@@ -1,6 +1,6 @@
 {
   "name": "generator-fsharp",
-  "version": "0.0.0",
+  "version": "0.5.3",
   "description": "Yeoman generator",
   "license": "Apache 2.0",
   "main": "app/index.js",
