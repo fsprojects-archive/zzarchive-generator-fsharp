@@ -1,3 +1,6 @@
+#### 0.5.3 - 17.12.2016
+* Blacklist control/punctuation characters for project name
+
 #### 0.5.2 - 07.01.2016
 * Reimplement add reference command
 * Add Azure Service Fabric templates
