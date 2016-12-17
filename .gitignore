@@ -3,3 +3,4 @@ temp/
 .paket/paket.exe
 packages
 .project
+.vscode

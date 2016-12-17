@@ -55,10 +55,10 @@ redistribution for both commercial and non-commercial purposes.
 Templates are added by doing PR to the develop branch adding new subfolders to the [templates folder](https://github.com/fsprojects/generator-fsharp/tree/develop/templates) and by updating [templates.json file](https://github.com/Krzysztof-Cieslak/generator-fsharp/blob/develop/templates/templates.json).
 
 At the moment, several helpers are working to make scaffolding easier:
-* In every file name `ApplicationName` part is replaced with application name user provided.
+* In ever file name `ApplicationName` part is replaced with application name user provided.
 * In template files `<%= namespace %>` tag can be used to insert application name provided by user ( [example#1](https://github.com/fsprojects/generator-fsharp/blob/develop/templates/classlib/ApplicationName.fs#L3), [example#2](https://github.com/fsprojects/generator-fsharp/blob/develop/templates/classlib/ApplicationName.fsproj#L10) )
 * In template files `<%= guid %>` tag can be used to insert randomly generated GUID ( [example#3](https://github.com/Krzysztof-Cieslak/generator-fsharp/blob/develop/templates/classlib/ApplicationName.fsproj#L8) )
-* In template files `<%= packagesPath %>` tag can be used to insert path to packages folder ( [example#4](https://github.com/fsprojects/generator-fsharp/blob/templates/fslabbasic/ApplicationName.fsx#L10) )
+* In template files `<%= pacakgesPath %>` tag can be used to insert path to packages folder ( [example#4](https://github.com/fsprojects/generator-fsharp/blob/templates/fslabbasic/ApplicationName.fsx#L10) )
 * In template files `<%= paketPath %>` tag can be used to insert path to `.paket` folder ( [example#5](https://github.com/fsprojects/generator-fsharp/blob/templates/fslabjournal/build.cmd#L7) )
 
 ### Maintainer(s)
