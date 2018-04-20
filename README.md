@@ -1,3 +1,5 @@
+## [Deprecated]
+
 ## F# Yeoman Generator
 
 ![](https://raw.githubusercontent.com/Krzysztof-Cieslak/generator-fsharp/develop/gif/demo.gif)
